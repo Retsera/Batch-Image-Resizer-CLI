@@ -3,6 +3,8 @@ const os = require('os');
 const path = require('path');
 const { version } = require('../package.json');
 
+const numCPUs = os.cpus().length;
+
 function parsePositiveInt(value, label) {
   const n = parseInt(value, 10);
   if (Number.isNaN(n) || n < 1) {
@@ -19,7 +21,7 @@ function parseQuality(value) {
   return n;
 }
 
-function main(options) {
+async function main(options) {
   // Tuần sau: đọc thư mục input, resize bằng Sharp, ghi output, dùng workers
   console.log('Cấu hình resize:', JSON.stringify(options, null, 2));
 }
@@ -71,5 +73,8 @@ main({
   width: opts.width,
   quality: opts.quality,
   format: opts.format,
-  workers: opts.workers ?? os.cpus().length,
+  workers: opts.workers ?? numCPUs,
+}).catch((err) => {
+  console.error(err);
+  process.exit(1);
 });
