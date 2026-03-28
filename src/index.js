@@ -1,9 +1,40 @@
 const { program, Option } = require('commander');
+const { Worker } = require('worker_threads');
 const os = require('os');
 const path = require('path');
 const { version } = require('../package.json');
 
 const numCPUs = os.cpus().length;
+
+/**
+ * Worker Threads: mỗi Worker là một luồng V8 riêng, phù hợp tác vụ CPU-bound (resize).
+ * Tránh block event loop của luồng chính khi xử lý nhiều ảnh.
+ */
+function runInWorker(task) {
+  return new Promise((resolve, reject) => {
+    const workerPath = path.join(__dirname, 'worker.js');
+    const worker = new Worker(workerPath);
+
+    const finish = async (handler) => {
+      try {
+        await worker.terminate();
+      } catch {
+        // ignore terminate errors
+      }
+      handler();
+    };
+
+    worker.once('message', (msg) => {
+      finish(() => resolve(msg));
+    });
+
+    worker.once('error', (err) => {
+      finish(() => reject(err));
+    });
+
+    worker.postMessage(task);
+  });
+}
 
 function parsePositiveInt(value, label) {
   const n = parseInt(value, 10);
