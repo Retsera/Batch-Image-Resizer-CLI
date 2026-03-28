@@ -2,7 +2,9 @@ const { program, Option } = require('commander');
 const { Worker } = require('worker_threads');
 const os = require('os');
 const path = require('path');
+const fs = require('fs').promises;
 const { version } = require('../package.json');
+const { getAllImages } = require('./utils/fsUtils');
 
 const numCPUs = os.cpus().length;
 
@@ -51,6 +53,12 @@ async function processBatch(tasks, concurrency) {
   return all;
 }
 
+/** Giữ cấu trúc thư mục con tương đối so với thư mục input. */
+function buildOutputPath(inputPath, inputRoot, outputDir) {
+  const rel = path.relative(path.resolve(inputRoot), path.resolve(inputPath));
+  return path.join(outputDir, rel);
+}
+
 function parsePositiveInt(value, label) {
   const n = parseInt(value, 10);
   if (Number.isNaN(n) || n < 1) {
@@ -68,8 +76,38 @@ function parseQuality(value) {
 }
 
 async function main(options) {
-  // Tuần sau: đọc thư mục input, resize bằng Sharp, ghi output, dùng workers
-  console.log('Cấu hình resize:', JSON.stringify(options, null, 2));
+  const workers = Math.max(1, options.workers ?? numCPUs);
+
+  const images = await getAllImages(options.input);
+  if (images.length === 0) {
+    console.log('Không tìm thấy ảnh nào trong:', options.input);
+    return;
+  }
+
+  const tasks = images.map((inputPath) => ({
+    inputPath,
+    outputPath: buildOutputPath(inputPath, options.input, options.output),
+    width: options.width,
+    quality: options.quality,
+    format: options.format,
+  }));
+
+  await Promise.all(
+    tasks.map((t) => fs.mkdir(path.dirname(t.outputPath), { recursive: true }))
+  );
+
+  const startTime = Date.now();
+  const results = await processBatch(tasks, workers);
+  const endTime = Date.now();
+
+  console.log(`Thời gian xử lý: ${endTime - startTime} ms (workers=${workers}, ảnh=${tasks.length})`);
+
+  const errors = results.filter((r) => r && r.status === 'error');
+  if (errors.length > 0) {
+    console.error(`Lỗi ${errors.length}/${results.length} file:`);
+    errors.forEach((e) => console.error(`  - ${e.input}: ${e.error}`));
+    process.exitCode = 1;
+  }
 }
 
 program
