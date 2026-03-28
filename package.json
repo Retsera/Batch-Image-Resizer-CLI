@@ -1,0 +1,12 @@
+{
+  "name": "node-core-image-resizer",
+  "version": "1.0.0",
+  "description": "Node.js Core - Batch Image Resizer CLI",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

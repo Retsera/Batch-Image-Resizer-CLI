@@ -1,0 +1,10 @@
+# Dependencies
+node_modules/
+
+# Ẩn output, chỉ giữ lại thư mục không cho commit ảnh rác lên repo
+resized/**
+!resized/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
