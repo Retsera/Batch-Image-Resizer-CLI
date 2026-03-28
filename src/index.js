@@ -36,6 +36,21 @@ function runInWorker(task) {
   });
 }
 
+/**
+ * Parallel theo batch: trong mỗi batch chạy tối đa `concurrency` worker cùng lúc (Promise.all).
+ * Các batch chạy tuần tự để không vượt quá số worker đã cấu hình.
+ */
+async function processBatch(tasks, concurrency) {
+  const limit = Math.max(1, concurrency);
+  const all = [];
+  for (let i = 0; i < tasks.length; i += limit) {
+    const chunk = tasks.slice(i, i + limit);
+    const batchResults = await Promise.all(chunk.map((t) => runInWorker(t)));
+    all.push(...batchResults);
+  }
+  return all;
+}
+
 function parsePositiveInt(value, label) {
   const n = parseInt(value, 10);
   if (Number.isNaN(n) || n < 1) {
