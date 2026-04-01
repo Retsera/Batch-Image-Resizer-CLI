@@ -1,5 +1,4 @@
 const { program, Option } = require('commander');
-const { Worker } = require('worker_threads');
 const os = require('os');
 const path = require('path');
 const fs = require('fs').promises;
@@ -10,34 +9,9 @@ const {
   buildOutputPath,
   writeJsonFile,
 } = require('./utils/fsUtils');
+const { WorkerPool } = require('./workerPool');
 
 const numCPUs = os.cpus().length;
-
-function runInWorker(task) {
-  return new Promise((resolve, reject) => {
-    const workerPath = path.join(__dirname, 'worker.js');
-    const worker = new Worker(workerPath);
-
-    const finish = async (handler) => {
-      try {
-        await worker.terminate();
-      } catch {
-        // ignore terminate errors
-      }
-      handler();
-    };
-
-    worker.once('message', (msg) => {
-      finish(() => resolve(msg));
-    });
-
-    worker.once('error', (err) => {
-      finish(() => reject(err));
-    });
-
-    worker.postMessage(task);
-  });
-}
 
 function parsePositiveInt(value, label) {
   const n = parseInt(value, 10);
@@ -102,10 +76,10 @@ function generateTasks(images, options) {
   return tasks;
 }
 
-async function runTaskWithMetrics(task) {
+async function runTaskWithMetrics(pool, task) {
   const beforeStat = await fs.stat(task.inputPath);
   const start = Date.now();
-  const workerResult = await runInWorker(task);
+  const workerResult = await pool.addTask(task);
   const durationMs = Date.now() - start;
 
   if (!workerResult || workerResult.status === 'error') {
@@ -134,19 +108,19 @@ async function runTaskWithMetrics(task) {
   };
 }
 
-async function processBatch(tasks, concurrency) {
+async function processBatch(pool, tasks, concurrency) {
   const limit = Math.max(1, concurrency);
   const all = [];
   for (let i = 0; i < tasks.length; i += limit) {
     const chunk = tasks.slice(i, i + limit);
-    const batchResults = await Promise.all(chunk.map((t) => runTaskWithMetrics(t)));
+    const batchResults = await Promise.all(chunk.map((t) => runTaskWithMetrics(pool, t)));
     all.push(...batchResults);
   }
   return all;
 }
 
 async function main(options) {
-  const workers = Math.max(1, options.workers ?? numCPUs);
+  const workers = Math.max(1, options.workers ?? (numCPUs - 1));
   // Mặc định skip existing. Khi có --overwrite thì ưu tiên ghi đè.
   const overwrite = options.overwrite === true;
 
@@ -182,12 +156,18 @@ async function main(options) {
     return;
   }
 
+  const pool = new WorkerPool({ workers, logger: () => {} });
   await Promise.all(
     tasks.map((t) => fs.mkdir(path.dirname(t.outputPath), { recursive: true }))
   );
 
+  let results = [];
   const startTime = Date.now();
-  const results = await processBatch(tasks, workers);
+  try {
+    results = await processBatch(pool, tasks, workers);
+  } finally {
+    await pool.closeAll();
+  }
   const endTime = Date.now();
 
   console.log(`Thời gian xử lý: ${endTime - startTime} ms (workers=${workers}, task=${tasks.length})`);
@@ -274,7 +254,7 @@ program
   )
   .option(
     '-w, --workers <number>',
-    'số worker xử lý song song (mặc định: số lõi CPU)',
+    'số worker xử lý song song (mặc định: số lõi CPU - 1)',
     (value) => parsePositiveInt(value, 'workers')
   )
   .option('--dry-run', 'chỉ liệt kê task sẽ xử lý, không resize thật', false)
@@ -292,7 +272,7 @@ main({
   width: opts.width,
   quality: opts.quality,
   format: opts.format,
-  workers: opts.workers ?? numCPUs,
+  workers: opts.workers ?? Math.max(1, numCPUs - 1),
   dryRun: Boolean(opts.dryRun),
   overwrite: Boolean(opts.overwrite),
   skipExisting: Boolean(opts.skipExisting),
