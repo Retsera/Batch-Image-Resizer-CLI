@@ -62,8 +62,34 @@ async function shouldOverwrite(filePath, overwrite = false) {
     return overwrite; // Nếu file tồn tại, trả về giá trị của option overwrite
 }
 
+/**
+ * Giữ cấu trúc thư mục con tương đối so với thư mục input.
+ *
+ * @param {string} inputPath Đường dẫn file nguồn.
+ * @param {string} inputRoot Thư mục gốc input.
+ * @param {string} outputRoot Thư mục gốc output.
+ * @returns {string} Đường dẫn output giữ nguyên cấu trúc thư mục con.
+ */
+function buildOutputPath(inputPath, inputRoot, outputRoot) {
+    const rel = path.relative(path.resolve(inputRoot), path.resolve(inputPath));
+    return path.join(outputRoot, rel);
+}
+
+/**
+ * Ghi file JSON có format đẹp.
+ *
+ * @param {string} filePath Đường dẫn file JSON.
+ * @param {any} data Dữ liệu ghi ra file.
+ * @returns {Promise<void>}
+ */
+async function writeJsonFile(filePath, data) {
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+}
+
 module.exports = {
     getAllImages,
     checkFileExists,
-    shouldOverwrite
+    shouldOverwrite,
+    buildOutputPath,
+    writeJsonFile
 };
