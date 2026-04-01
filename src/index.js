@@ -2,6 +2,7 @@ const { program, Option } = require('commander');
 const os = require('os');
 const path = require('path');
 const fs = require('fs').promises;
+const cliProgress = require('cli-progress');
 const { version } = require('../package.json');
 const {
   getAllImages,
@@ -108,27 +109,200 @@ async function runTaskWithMetrics(pool, task) {
   };
 }
 
-async function processBatch(pool, tasks, concurrency) {
+/**
+ * Xử lý song song với giới hạn concurrency; gọi onProgress(completed, total) sau mỗi task xong.
+ */
+async function processBatchConcurrent(pool, tasks, concurrency, onProgress) {
+  const total = tasks.length;
+  if (total === 0) return [];
   const limit = Math.max(1, concurrency);
-  const all = [];
-  for (let i = 0; i < tasks.length; i += limit) {
-    const chunk = tasks.slice(i, i + limit);
-    const batchResults = await Promise.all(chunk.map((t) => runTaskWithMetrics(pool, t)));
-    all.push(...batchResults);
+  const results = new Array(total);
+  let nextTask = 0;
+  let completed = 0;
+
+  async function workerFn() {
+    while (true) {
+      const i = nextTask++;
+      if (i >= total) break;
+      const r = await runTaskWithMetrics(pool, tasks[i]);
+      results[i] = r;
+      completed += 1;
+      if (onProgress) onProgress(completed, total);
+    }
   }
-  return all;
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, total) }, () => workerFn())
+  );
+  return results;
 }
 
-async function main(options) {
-  const workers = Math.max(1, options.workers ?? (numCPUs - 1));
-  // Mặc định skip existing. Khi có --overwrite thì ưu tiên ghi đè.
+async function runInteractiveWizard(ctx) {
+  const { inquirer, chalk, numCPUs: cpus } = ctx;
+  const defaultWorkers = Math.max(1, cpus - 1);
+
+  const answers = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'input',
+      message: 'Thư mục chứa ảnh nguồn:',
+      default: './images',
+      validate: async (inputPath) => {
+        const resolved = path.resolve(inputPath || '');
+        try {
+          const st = await fs.stat(resolved);
+          return st.isDirectory() ? true : 'Đường dẫn phải là thư mục';
+        } catch {
+          return 'Thư mục không tồn tại hoặc không đọc được';
+        }
+      },
+    },
+    {
+      type: 'input',
+      name: 'output',
+      message: 'Thư mục ghi ảnh đã resize:',
+      default: './resized',
+    },
+    {
+      type: 'list',
+      name: 'widthMode',
+      message: 'Chiều rộng resize:',
+      choices: [
+        { name: 'Một kích thước (width)', value: 'single' },
+        { name: 'Nhiều kích thước (sizes)', value: 'multiple' },
+      ],
+      default: 'single',
+    },
+    {
+      type: 'input',
+      name: 'width',
+      message: 'Chiều rộng đích (pixel):',
+      default: '1024',
+      when: (a) => a.widthMode === 'single',
+      validate: (v) => {
+        try {
+          parsePositiveInt(String(v).trim(), 'width');
+          return true;
+        } catch (e) {
+          return e.message;
+        }
+      },
+    },
+    {
+      type: 'input',
+      name: 'sizesString',
+      message: 'Danh sách chiều rộng (cách nhau bởi dấu phẩy), ví dụ 800,1200,1920:',
+      when: (a) => a.widthMode === 'multiple',
+      validate: (v) => {
+        try {
+          const s = parseSizes(String(v).trim());
+          return s.length > 0 ? true : 'Nhập ít nhất một số';
+        } catch (e) {
+          return e.message;
+        }
+      },
+    },
+    {
+      type: 'input',
+      name: 'quality',
+      message: 'Chất lượng nén (1–100):',
+      default: '85',
+      validate: (v) => {
+        try {
+          parseQuality(String(v).trim());
+          return true;
+        } catch (e) {
+          return e.message;
+        }
+      },
+    },
+    {
+      type: 'list',
+      name: 'format',
+      message: 'Định dạng đầu ra:',
+      choices: [
+        { name: 'JPEG', value: 'jpeg' },
+        { name: 'WebP', value: 'webp' },
+        { name: 'AVIF', value: 'avif' },
+      ],
+      default: 'jpeg',
+    },
+    {
+      type: 'input',
+      name: 'workers',
+      message: `Số workers (Enter = ${defaultWorkers} theo CPU):`,
+      default: String(defaultWorkers),
+      validate: (v) => {
+        const s = String(v).trim();
+        if (s === '') return true;
+        try {
+          parsePositiveInt(s, 'workers');
+          return true;
+        } catch (e) {
+          return e.message;
+        }
+      },
+    },
+    {
+      type: 'confirm',
+      name: 'overwrite',
+      message: 'Ghi đè file đích nếu đã tồn tại? (No = bỏ qua file trùng)',
+      default: false,
+    },
+  ]);
+
+  const workersRaw = String(answers.workers || '').trim();
+  const workers = workersRaw === '' ? defaultWorkers : parsePositiveInt(workersRaw, 'workers');
+
+  const sizes =
+    answers.widthMode === 'multiple'
+      ? parseSizes(String(answers.sizesString).trim())
+      : [];
+
+  const width =
+    answers.widthMode === 'single'
+      ? parsePositiveInt(String(answers.width).trim(), 'width')
+      : 1024;
+
+  return {
+    input: path.normalize(answers.input),
+    output: path.normalize(answers.output),
+    sizes,
+    width,
+    quality: parseQuality(String(answers.quality).trim()),
+    format: answers.format,
+    workers,
+    dryRun: false,
+    overwrite: Boolean(answers.overwrite),
+    skipExisting: !answers.overwrite,
+  };
+}
+
+async function main(options, ui) {
+  const chalk = ui.chalk;
+  const ora = ui.ora;
+  const workers = Math.max(1, options.workers ?? Math.max(1, numCPUs - 1));
   const overwrite = options.overwrite === true;
 
-  const images = await getAllImages(options.input);
+  const spinner = ora({
+    text: chalk.cyan('Đang quét thư mục ảnh…'),
+    color: 'cyan',
+  }).start();
+
+  let images;
+  try {
+    images = await getAllImages(options.input);
+  } catch (err) {
+    spinner.fail(chalk.red(`Lỗi khi quét thư mục: ${err.message}`));
+    throw err;
+  }
+
   if (images.length === 0) {
-    console.log('Không tìm thấy ảnh nào trong:', options.input);
+    spinner.warn(chalk.yellow(`Không tìm thấy ảnh nào trong: ${options.input}`));
     return;
   }
+
+  spinner.succeed(chalk.green(`Đã quét xong — ${images.length} ảnh`));
 
   const allTasks = generateTasks(images, options);
 
@@ -143,25 +317,37 @@ async function main(options) {
   }
 
   if (options.dryRun) {
-    console.log('\n[DRY-RUN] Danh sách file sẽ xử lý:');
+    console.log(chalk.cyan('\n[DRY-RUN] Danh sách file sẽ xử lý:'));
     tasks.forEach((task) => {
       console.log(`- [${task.size}px] ${task.inputPath} -> ${task.outputPath}`);
     });
-    console.log(`\n[DRY-RUN] Tổng task: ${tasks.length}, bỏ qua: ${skipped.length}`);
+    console.log(
+      chalk.cyan(`\n[DRY-RUN] Tổng task: ${tasks.length}, bỏ qua: ${skipped.length}`)
+    );
     return;
   }
 
   if (tasks.length === 0) {
-    console.log('Tất cả file đã tồn tại hoặc không có gì để xử lý (skip existing).');
+    console.log(
+      chalk.yellow('Tất cả file đích đã tồn tại — không có gì để xử lý (skip).')
+    );
     return;
   }
 
-  console.log(`Đang chạy với ${workers} workers`);
-  const pool = new WorkerPool({ workers, logger: console.log });
+  if (skipped.length > 0) {
+    console.log(
+      chalk.yellow(`Cảnh báo: ${skipped.length} task bị bỏ qua do file đích đã tồn tại.`)
+    );
+  }
+
+  const pool = new WorkerPool({
+    workers,
+    logger: () => {},
+  });
 
   const onShutdown = async (reason) => {
     try {
-      if (reason) console.error(reason);
+      if (reason) console.error(chalk.red(reason));
       await pool.closeAll();
     } catch {
       // ignore
@@ -169,10 +355,10 @@ async function main(options) {
   };
 
   const handleSigInt = () => {
-    onShutdown('Nhận SIGINT, đang đóng worker pool...').finally(() => process.exit(130));
+    onShutdown('Nhận SIGINT, đang đóng worker pool…').finally(() => process.exit(130));
   };
   const handleSigTerm = () => {
-    onShutdown('Nhận SIGTERM, đang đóng worker pool...').finally(() => process.exit(143));
+    onShutdown('Nhận SIGTERM, đang đóng worker pool…').finally(() => process.exit(143));
   };
 
   process.once('SIGINT', handleSigInt);
@@ -182,18 +368,45 @@ async function main(options) {
   );
 
   let results = [];
-  const startTime = Date.now();
+  const bar = new cliProgress.SingleBar(
+    {
+      clearOnComplete: false,
+      hideCursor: true,
+      format:
+        'Resize |{bar}| {percentage}% | ảnh {value}/{total} | {imgPerSec} ảnh/giây | đã chạy {duration_formatted} | còn ~{eta_formatted}',
+      barCompleteChar: '\u2588',
+      barIncompleteChar: '\u2591',
+    },
+    cliProgress.Presets.shades_classic
+  );
+
+  const processStart = Date.now();
+  bar.start(tasks.length, 0, { imgPerSec: '0.00' });
+
   try {
-    results = await processBatch(pool, tasks, workers);
+    results = await processBatchConcurrent(pool, tasks, workers, (completed, total) => {
+      const elapsedSec = (Date.now() - processStart) / 1000;
+      const imgPerSec = elapsedSec > 0 ? (completed / elapsedSec).toFixed(2) : '0.00';
+      bar.update(completed, { imgPerSec });
+    });
   } finally {
     process.removeListener('SIGINT', handleSigInt);
     process.removeListener('SIGTERM', handleSigTerm);
+    bar.stop();
     await pool.closeAll();
   }
-  const endTime = Date.now();
 
-  console.log(`Thời gian xử lý: ${endTime - startTime} ms (workers=${workers}, task=${tasks.length})`);
-  console.log(`Đã bỏ qua ${skipped.length} task do file đích đã tồn tại.`);
+  const endTime = Date.now();
+  const totalMs = endTime - processStart;
+
+  console.log(
+    chalk.green(
+      `\nHoàn tất: ${tasks.length} task trong ${totalMs} ms (workers=${workers}).`
+    )
+  );
+  console.log(
+    chalk.gray(`Đã bỏ qua ${skipped.length} task do trùng file đích (nếu có).`)
+  );
 
   const okRows = results
     .filter((r) => r && r.status === 'done')
@@ -207,14 +420,18 @@ async function main(options) {
     }));
 
   if (okRows.length > 0) {
-    console.log('\nChi tiết resize:');
+    console.log(chalk.green('\nChi tiết resize:'));
     console.table(okRows);
   }
 
   const errors = results.filter((r) => r && r.status === 'error');
   if (errors.length > 0) {
-    console.error(`Lỗi ${errors.length}/${results.length} file:`);
-    errors.forEach((e) => console.error(`  - ${e.input}: ${e.error}`));
+    console.error(
+      chalk.red(`Lỗi ${errors.length}/${results.length} file:`)
+    );
+    errors.forEach((e) =>
+      console.error(chalk.red(`  - ${e.input || e.inputPath}: ${e.error}`))
+    );
     process.exitCode = 1;
   }
 
@@ -227,7 +444,7 @@ async function main(options) {
       skipped: skipped.length,
       success: okRows.length,
       failed: errors.length,
-      totalTimeMs: endTime - startTime,
+      totalTimeMs: totalMs,
       workers,
     },
     results,
@@ -236,7 +453,7 @@ async function main(options) {
   await fs.mkdir(options.output, { recursive: true });
   const logPath = path.join(options.output, 'resize-log.json');
   await writeJsonFile(logPath, logPayload);
-  console.log(`Đã ghi log: ${logPath}`);
+  console.log(chalk.green(`Đã ghi log: ${logPath}`));
 }
 
 program
@@ -244,7 +461,7 @@ program
   .description(
     `Công cụ dòng lệnh resize ảnh hàng loạt (batch) bằng Sharp.\n` +
       `Đọc ảnh từ thư mục --input, ghi ảnh đã resize ra --output.\n` +
-      `Hỗ trợ multi-size (--sizes), dry-run, và skip/overwrite file đích.`
+      `Hỗ trợ multi-size (--sizes), dry-run, skip/overwrite, và chế độ tương tác (không tham số).`
   )
   .version(version, '-V, --version', 'hiển thị phiên bản')
   .helpOption('-h, --help', 'hiển thị trợ giúp');
@@ -283,22 +500,39 @@ program
   .option('--overwrite', 'ghi đè nếu file đích đã tồn tại', false)
   .option('--skip-existing', 'bỏ qua nếu file đích đã tồn tại (mặc định)', true);
 
-program.parse(process.argv);
+async function bootstrap() {
+  const chalk = (await import('chalk')).default;
+  const ora = (await import('ora')).default;
+  const inquirer = (await import('inquirer')).default;
 
-const opts = program.opts();
+  const raw = process.argv.slice(2);
+  const interactive = raw.length === 0;
 
-main({
-  input: path.normalize(opts.input),
-  output: path.normalize(opts.output),
-  sizes: opts.sizes,
-  width: opts.width,
-  quality: opts.quality,
-  format: opts.format,
-  workers: opts.workers ?? Math.max(1, numCPUs - 1),
-  dryRun: Boolean(opts.dryRun),
-  overwrite: Boolean(opts.overwrite),
-  skipExisting: Boolean(opts.skipExisting),
-}).catch((err) => {
+  let options;
+  if (interactive) {
+    console.log(chalk.cyan.bold('\n resize-cli — chế độ tương tác\n'));
+    options = await runInteractiveWizard({ inquirer, chalk, numCPUs });
+  } else {
+    program.parse(process.argv);
+    const opts = program.opts();
+    options = {
+      input: path.normalize(opts.input),
+      output: path.normalize(opts.output),
+      sizes: opts.sizes,
+      width: opts.width,
+      quality: opts.quality,
+      format: opts.format,
+      workers: opts.workers ?? Math.max(1, numCPUs - 1),
+      dryRun: Boolean(opts.dryRun),
+      overwrite: Boolean(opts.overwrite),
+      skipExisting: Boolean(opts.skipExisting),
+    };
+  }
+
+  await main(options, { chalk, ora });
+}
+
+bootstrap().catch((err) => {
   console.error(err);
   process.exit(1);
 });
