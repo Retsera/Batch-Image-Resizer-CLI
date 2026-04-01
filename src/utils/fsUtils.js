@@ -34,6 +34,36 @@ async function getAllImages(dir, recursive = true) {
     return images;
 }
 
+/**
+ * Kiểm tra xem một file có tồn tại hay không.
+ * 
+ * @param {string} filePath Đường dẫn file cần kiểm tra.
+ * @returns {Promise<boolean>} Trả về true nếu file tồn tại, ngược lại false.
+ */
+async function checkFileExists(filePath) {
+    try {
+        await fs.access(filePath);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Quyết định xem có xử lý đè lên file cũ hay bỏ qua.
+ * 
+ * @param {string} filePath Đường dẫn file đích.
+ * @param {boolean} overwrite Tùy chọn ghi đè.
+ * @returns {Promise<boolean>} Trả về true nếu nên tiếp tục xử lý, ngược lại false.
+ */
+async function shouldOverwrite(filePath, overwrite = false) {
+    const exists = await checkFileExists(filePath);
+    if (!exists) return true; // File chưa tồn tại, an tâm tạo mới
+    return overwrite; // Nếu file tồn tại, trả về giá trị của option overwrite
+}
+
 module.exports = {
-    getAllImages
+    getAllImages,
+    checkFileExists,
+    shouldOverwrite
 };

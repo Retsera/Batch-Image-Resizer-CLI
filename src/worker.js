@@ -21,63 +21,99 @@ const path = require('path');
  *    - Pipeline giúp xử lý lỗi tập trung và tự động dọn dẹp (cleanup) các stream khi có lỗi xảy ra.
  */
 
+const MAX_RETRIES = 2;
+const HIGH_WATER_MARK = 64 * 1024; // 64KB - Kiểm soát lượng dữ liệu đệm trong RAM
+
+/**
+ * Hàm log thông số bộ nhớ: Giúp theo dõi rò rỉ hoặc quá tải RAM khi xử lý file lớn.
+ * @param {string} stage Giai đoạn (Before/After)
+ * @param {string} filename Tên file đang xử lý
+ */
+function logMemoryUsage(stage, filename) {
+    const used = process.memoryUsage().heapUsed / 1024 / 1024;
+    console.log(`[Worker] Memory ${stage} processing ${filename}: ${Math.round(used * 100) / 100} MB`);
+}
+
 parentPort.on('message', async (task) => {
     const { inputPath, outputPath, width, quality, format } = task;
     const filename = path.basename(inputPath);
+    let attempts = 0;
+    let success = false;
 
-    try {
-        // Kiểm tra xem inputPath có tồn tại không
-        if (!fs.existsSync(inputPath)) {
-          throw new Error(`File nguồn không tồn tại: ${inputPath}`);
+    logMemoryUsage('BEFORE', filename);
+
+    while (attempts <= MAX_RETRIES && !success) {
+        try {
+            // Kiểm tra file nguồn trước khi bắt đầu stream
+            if (!fs.existsSync(inputPath)) {
+                throw new Error(`File nguồn không tồn tại: ${inputPath}`);
+            }
+
+            /**
+             * GIẢI THÍCH VỀ STREAMS & PIPELINE:
+             * 
+             * 1. Stream Pipeline:
+             *    - Tự động kết nối các luồng (Read -> Transform -> Write).
+             *    - Tự động đóng tất cả các streams (cleanup) nếu một trong số chúng bị lỗi hoặc kết thúc. 
+             *      Điều này ngăn chặn "resource leakage" (rò rỉ tài nguyên).
+             * 
+             * 2. Xử lý file lớn an toàn (HighWaterMark):
+             *    - Bằng cách set HIGH_WATER_MARK = 64KB, chúng ta giới hạn lượng dữ liệu 
+             *      mà Node.js giữ trong bộ đệm (internal buffer) tại một thời điểm.
+             *    - Giúp bộ nhớ RAM luôn ở mức thấp và ổn định, bất kể file ảnh đầu vào nặng bao nhiêu GB.
+             */
+            const readStream = fs.createReadStream(inputPath, { highWaterMark: HIGH_WATER_MARK });
+            const writeStream = fs.createWriteStream(outputPath, { highWaterMark: HIGH_WATER_MARK });
+
+            let transformer = sharp().resize({ 
+                width: parseInt(width) || undefined, 
+                withoutEnlargement: true 
+            });
+
+            // Cấu hình định dạng output
+            switch (format.toLowerCase()) {
+                case 'jpeg':
+                case 'jpg':
+                    transformer = transformer.jpeg({ quality: parseInt(quality) || 80, mozjpeg: true });
+                    break;
+                case 'webp':
+                    transformer = transformer.webp({ quality: parseInt(quality) || 80 });
+                    break;
+                case 'avif':
+                    transformer = transformer.avif({ quality: parseInt(quality) || 50 });
+                    break;
+            }
+
+            // Thực thi pipeline
+            await pipeline(readStream, transformer, writeStream);
+            success = true;
+
+            parentPort.postMessage({
+                status: 'done',
+                input: filename,
+                output: outputPath
+            });
+
+        } catch (err) {
+            attempts++;
+            /**
+             * RETRY MECHANISM:
+             * - Một số lỗi như "File busy/locked" hoặc "Temporary I/O error" có thể xảy ra ngẫu nhiên.
+             * - Thử lại tối đa 2 lần giúp tăng tính bền vững (robustness) cho hệ thống batch processing.
+             */
+            if (attempts <= MAX_RETRIES) {
+                console.warn(`[Worker] Lỗi khi xử lý ${filename} (Lần thử ${attempts}): ${err.message}. Đang thử lại...`);
+                // Nghỉ một chút trước khi thử lại (backoff nhẹ)
+                await new Promise(resolve => setTimeout(resolve, 500)); 
+            } else {
+                parentPort.postMessage({
+                    status: 'error',
+                    input: filename,
+                    error: `Thất bại sau ${attempts} lần thử. Lỗi cuối: ${err.message}`
+                });
+            }
         }
-
-        // Khởi tạo Read Stream từ file nguồn
-        const readStream = fs.createReadStream(inputPath);
-
-        // Cấu hình Sharp Transform Stream
-        let transformer = sharp().resize({ width: parseInt(width) || undefined, withoutEnlargement: true });
-
-        // Cấu hình định dạng output
-        switch (format.toLowerCase()) {
-            case 'jpeg':
-            case 'jpg':
-                transformer = transformer.jpeg({ quality: parseInt(quality) || 80, mozjpeg: true });
-                break;
-            case 'webp':
-                transformer = transformer.webp({ quality: parseInt(quality) || 80 });
-                break;
-            case 'avif':
-                transformer = transformer.avif({ quality: parseInt(quality) || 50 });
-                break;
-            default:
-                // Nếu format không khớp, giữ nguyên format gốc nhưng tối ưu hóa
-                break;
-        }
-
-        // Khởi tạo Write Stream tới file đích
-        const writeStream = fs.createWriteStream(outputPath);
-
-        // Sử dụng Stream Pipeline để kết hợp các luồng dữ liệu
-        // Pipeline tự động xử lý error và dọn dẹp resource (close handles)
-        await pipeline(
-            readStream,
-            transformer,
-            writeStream
-        );
-
-        // Gửi thông báo thành công về Parent
-        parentPort.postMessage({
-            status: 'done',
-            input: filename,
-            output: outputPath
-        });
-
-    } catch (err) {
-        // Gửi thông báo lỗi về Parent
-        parentPort.postMessage({
-            status: 'error',
-            input: filename,
-            error: err.message
-        });
     }
+
+    logMemoryUsage('AFTER', filename);
 });
