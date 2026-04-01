@@ -156,7 +156,27 @@ async function main(options) {
     return;
   }
 
-  const pool = new WorkerPool({ workers, logger: () => {} });
+  console.log(`Đang chạy với ${workers} workers`);
+  const pool = new WorkerPool({ workers, logger: console.log });
+
+  const onShutdown = async (reason) => {
+    try {
+      if (reason) console.error(reason);
+      await pool.closeAll();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleSigInt = () => {
+    onShutdown('Nhận SIGINT, đang đóng worker pool...').finally(() => process.exit(130));
+  };
+  const handleSigTerm = () => {
+    onShutdown('Nhận SIGTERM, đang đóng worker pool...').finally(() => process.exit(143));
+  };
+
+  process.once('SIGINT', handleSigInt);
+  process.once('SIGTERM', handleSigTerm);
   await Promise.all(
     tasks.map((t) => fs.mkdir(path.dirname(t.outputPath), { recursive: true }))
   );
@@ -166,6 +186,8 @@ async function main(options) {
   try {
     results = await processBatch(pool, tasks, workers);
   } finally {
+    process.removeListener('SIGINT', handleSigInt);
+    process.removeListener('SIGTERM', handleSigTerm);
     await pool.closeAll();
   }
   const endTime = Date.now();
