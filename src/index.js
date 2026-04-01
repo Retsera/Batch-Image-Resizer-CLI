@@ -4,7 +4,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs').promises;
 const { version } = require('../package.json');
-const { getAllImages } = require('./utils/fsUtils');
+const { getAllImages, shouldOverwrite } = require('./utils/fsUtils');
 
 const numCPUs = os.cpus().length;
 
@@ -84,13 +84,26 @@ async function main(options) {
     return;
   }
 
-  const tasks = images.map((inputPath) => ({
+  const allTasks = images.map((inputPath) => ({
     inputPath,
     outputPath: buildOutputPath(inputPath, options.input, options.output),
     width: options.width,
     quality: options.quality,
     format: options.format,
   }));
+
+  // Lọc task: Chỉ xử lý nếu cần thiết (dựa trên tùy chọn overwrite)
+  const tasks = [];
+  for (const task of allTasks) {
+    if (await shouldOverwrite(task.outputPath, options.overwrite)) {
+      tasks.push(task);
+    }
+  }
+
+  if (tasks.length === 0) {
+    console.log('Tất cả file đã tồn tại hoặc không có gì để xử lý (Skip mode active).');
+    return;
+  }
 
   await Promise.all(
     tasks.map((t) => fs.mkdir(path.dirname(t.outputPath), { recursive: true }))
@@ -145,7 +158,8 @@ program
     '-w, --workers <number>',
     'số worker xử lý song song (mặc định: số lõi CPU)',
     (value) => parsePositiveInt(value, 'workers')
-  );
+  )
+  .option('--no-overwrite', 'không ghi đè nếu file đích đã tồn tại', true);
 
 program.parse(process.argv);
 
@@ -158,6 +172,7 @@ main({
   quality: opts.quality,
   format: opts.format,
   workers: opts.workers ?? numCPUs,
+  overwrite: opts.overwrite,
 }).catch((err) => {
   console.error(err);
   process.exit(1);
