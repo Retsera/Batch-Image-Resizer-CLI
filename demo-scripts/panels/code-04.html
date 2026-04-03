@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Code 4: Demo 4.1.3 — Terminal UX</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#ffffff; padding:20px; font-family:'Segoe UI',sans-serif; }
+  .header {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 14px; background:#f0f4ff;
+    border-left:4px solid #0f3460; border-radius:4px; margin-bottom:12px;
+  }
+  .num { font-size:18px; font-weight:800; color:#0f3460; }
+  .title { font-size:13px; font-weight:600; color:#0f3460; flex:1; }
+  .ffile { font-size:11px; color:#6b7280; font-family:monospace;
+           background:#e5e7eb; padding:2px 6px; border-radius:3px; }
+  .panel { border-radius:8px; overflow:hidden;
+           border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .bar { display:flex; align-items:center; gap:6px;
+         padding:8px 14px; background:#f1f5f9; border-bottom:1px solid #e2e8f0; }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dr { background:#ef4444; } .dy { background:#f59e0b; } .dg { background:#22c55e; }
+  .bname { font-size:12px; font-weight:600; color:#374151;
+           font-family:monospace; margin-left:6px; }
+  pre { margin:0; padding:16px 18px; background:#fafafa;
+        font-family:Consolas,'Courier New',monospace; font-size:12.5px;
+        line-height:1.65; overflow-x:auto; white-space:pre; color:#1e293b; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="num">04</span>
+    <span class="title">Demo 4.1.3 — Terminal UX</span>
+    <span class="ffile">04-demo-terminal-ux.js</span>
+  </div>
+  <div class="panel">
+    <div class="bar">
+      <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+      <span class="bname">📄 04-demo-terminal-ux.js</span>
+    </div>
+    <pre>#!/usr/bin/env node
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+<span style="color:#6b7280;font-style:italic">// DEMO <span style="color:#0284c7">4.1</span>.<span style="color:#0284c7">3</span> — Terminal UX: ora + cli-progress + chalk + inquirer</span>
+<span style="color:#6b7280;font-style:italic">// Minh họa: spinner không xác định, progress bar có thể đo,</span>
+<span style="color:#6b7280;font-style:italic">//           màu sắc ngữ nghĩa, menu tương tác inquirer</span>
+<span style="color:#6b7280;font-style:italic">// Chạy:  node <span style="color:#0284c7">04</span>-demo-terminal-ux.js              (tự động, không cần nhập)</span>
+<span style="color:#6b7280;font-style:italic">// Chạy:  node <span style="color:#0284c7">04</span>-demo-terminal-ux.js --interactive (bật menu inquirer thật)</span>
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> chalk       <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'chalk'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> ora         <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'ora'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> cliProgress <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'cli-progress'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> inquirer    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'inquirer'</span>;
+
+<span style="color:#6b7280;font-style:italic">// ── Hàm tiện ích: dừng N mili-giây (giả lập tác vụ) ─────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> sleep = (ms) =&gt; <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">new</span> Promise((res) =&gt; setTimeout(res, ms));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> isInteractive = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.argv.includes(<span style="color:#16a34a">'--interactive'</span>);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.bold.cyan(<span style="color:#16a34a">'\n╔══════════════════════════════════════════╗'</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.bold.cyan(<span style="color:#16a34a">'║   Demo: Terminal UX — Chương <span style="color:#0284c7">4.1</span>.<span style="color:#0284c7">3</span>       ║'</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.bold.cyan(<span style="color:#16a34a">'╚══════════════════════════════════════════╝\n'</span>));
+
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#6b7280;font-style:italic">// BƯỚC <span style="color:#0284c7">1</span>: inquirer — Menu tương tác (Wizard Mode)</span>
+<span style="color:#6b7280;font-style:italic">//   Pull Mode: hệ thống CHỦ ĐỘNG hỏi thay vì người dùng phải nhớ flags</span>
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">let</span> answers;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (isInteractive) {
+  <span style="color:#6b7280;font-style:italic">// Chế độ thật: hiển thị menu inquirer, người dùng chọn bằng phím mũi tên</span>
+  answers = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> inquirer.prompt([
+    {
+      type: <span style="color:#16a34a">'list'</span>,
+      name: <span style="color:#16a34a">'format'</span>,
+      message: <span style="color:#16a34a">'Chọn định dạng ảnh đầu ra:'</span>,
+      choices: [<span style="color:#16a34a">'jpeg'</span>, <span style="color:#16a34a">'png'</span>, <span style="color:#16a34a">'webp'</span>, <span style="color:#16a34a">'avif'</span>],
+      default: <span style="color:#16a34a">'jpeg'</span>,
+    },
+    {
+      type: <span style="color:#16a34a">'number'</span>,
+      name: <span style="color:#16a34a">'quality'</span>,
+      message: <span style="color:#16a34a">'Nhập chất lượng nén (<span style="color:#0284c7">1</span>–<span style="color:#0284c7">100</span>):'</span>,
+      default: <span style="color:#0284c7">80</span>,
+      validate: (val) =&gt; (val &gt;= <span style="color:#0284c7">1</span> &amp;&amp; val &lt;= <span style="color:#0284c7">100</span>) || <span style="color:#16a34a">'Phải từ <span style="color:#0284c7">1</span> đến <span style="color:#0284c7">100</span>'</span>,
+    },
+    {
+      type: <span style="color:#16a34a">'confirm'</span>,
+      name: <span style="color:#16a34a">'verbose'</span>,
+      message: <span style="color:#16a34a">'Bật chế độ verbose (log chi tiết)?'</span>,
+      default: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">false</span>,
+    },
+  ]);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.green(<span style="color:#16a34a">'\n✔ Cấu hình từ inquirer:'</span>), answers);
+} <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">else</span> {
+  <span style="color:#6b7280;font-style:italic">// Chế độ demo tự động: giả lập kết quả inquirer</span>
+  answers = { format: <span style="color:#16a34a">'jpeg'</span>, quality: <span style="color:#0284c7">80</span>, verbose: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">false</span> };
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.bold(<span style="color:#16a34a">'── BƯỚC <span style="color:#0284c7">1</span>: inquirer (Wizard Mode) ──'</span>));
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.blue(<span style="color:#16a34a">'   ? Chọn định dạng ảnh đầu ra:'</span>));
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.cyan(<span style="color:#16a34a">'   ❯ jpeg'</span>) + <span style="color:#16a34a">'  png  webp  avif'</span>);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.blue(<span style="color:#16a34a">'\n   ? Nhập chất lượng nén (<span style="color:#0284c7">1</span>–<span style="color:#0284c7">100</span>):'</span>));
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.cyan(<span style="color:#16a34a">'   ❯ <span style="color:#0284c7">80</span>'</span>));
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.blue(<span style="color:#16a34a">'\n   ? Bật chế độ verbose?'</span>));
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.cyan(<span style="color:#16a34a">'   ❯ Không\n'</span>));
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.green(<span style="color:#16a34a">'   ✔ Cấu hình đã nhận:'</span>), answers);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.gray(<span style="color:#16a34a">'   → Thêm --interactive để dùng menu thật\n'</span>));
+}
+
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#6b7280;font-style:italic">// BƯỚC <span style="color:#0284c7">2</span>: ora spinner — Tác vụ không đo được thời gian</span>
+<span style="color:#6b7280;font-style:italic">//   Unknown Duration: hiển thị spinner quay để báo &quot;còn sống&quot;</span>
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.bold(<span style="color:#16a34a">'── BƯỚC <span style="color:#0284c7">2</span>: ora Spinner (Unknown Duration) ──'</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> spinner = ora({
+  text: chalk.blue(<span style="color:#16a34a">'Đang quét thư mục và thu thập danh sách ảnh...'</span>),
+  color: <span style="color:#16a34a">'cyan'</span>,
+}).start();
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> sleep(<span style="color:#0284c7">1500</span>);
+spinner.succeed(chalk.green(<span style="color:#16a34a">'Tìm thấy <span style="color:#0284c7">12</span> file ảnh hợp lệ!'</span>));
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> spinner2 = ora({
+  text: chalk.blue(<span style="color:#16a34a">'Khởi tạo Worker Thread Pool...'</span>),
+  color: <span style="color:#16a34a">'yellow'</span>,
+}).start();
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> sleep(<span style="color:#0284c7">1000</span>);
+spinner2.succeed(chalk.green(<span style="color:#16a34a">'Worker Pool sẵn sàng (<span style="color:#0284c7">4</span> luồng song song)\n'</span>));
+
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#6b7280;font-style:italic">// BƯỚC <span style="color:#0284c7">3</span>: cli-progress — Thanh tiến trình có thể đo</span>
+<span style="color:#6b7280;font-style:italic">//   Determinable Duration: biết tổng số công việc → hiện % + ETA</span>
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.bold(<span style="color:#16a34a">'── BƯỚC <span style="color:#0284c7">3</span>: cli-progress Bar (Determinable Duration) ──'</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> totalImages = <span style="color:#0284c7">12</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> progressBar = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">new</span> cliProgress.SingleBar({
+  format: chalk.cyan(<span style="color:#16a34a">'  Nén ảnh'</span>) + <span style="color:#16a34a">' |'</span> + chalk.cyan(<span style="color:#16a34a">'{bar}'</span>) +
+          <span style="color:#16a34a">'| {percentage}% || {value}/{total} file || ETA: {eta}s'</span>,
+  barCompleteChar: <span style="color:#16a34a">'█'</span>,
+  barIncompleteChar: <span style="color:#16a34a">'░'</span>,
+  hideCursor: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">false</span>,
+}, cliProgress.Presets.shades_classic);
+
+progressBar.start(totalImages, <span style="color:#0284c7">0</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">for</span> (<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">let</span> i = <span style="color:#0284c7">0</span>; i &lt; totalImages; i++) {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> sleep(<span style="color:#0284c7">200</span>);
+  progressBar.increment();
+}
+
+progressBar.stop();
+
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#6b7280;font-style:italic">// BƯỚC <span style="color:#0284c7">4</span>: chalk — Màu sắc ngữ nghĩa trong kết quả log</span>
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n'</span> + chalk.bold(<span style="color:#16a34a">'📊 Kết quả xử lý:'</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.green(<span style="color:#16a34a">'  ✔ photo_001.jpg → output/photo_001.jpeg (98KB → 42KB)'</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.green(<span style="color:#16a34a">'  ✔ photo_002.jpg → output/photo_002.jpeg (120KB → 55KB)'</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.yellow(<span style="color:#16a34a">'  ⚠ icon.png      → BỎ QUA (file PNG &lt; 10KB, không cần nén)'</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.red   (<span style="color:#16a34a">'  ✖ banner.png    → LỖI: Không đủ quyền ghi vào thư mục output'</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.green(<span style="color:#16a34a">'  ✔ hero_image.jpeg → output/hero_image.jpeg (<span style="color:#0284c7">2.</span>1MB → 340KB)'</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.green(<span style="color:#16a34a">'  ✔ ... (<span style="color:#0284c7">8</span> file còn lại thành công)\n'</span>));
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.bold.green(<span style="color:#16a34a">'✅ Hoàn tất! <span style="color:#0284c7">10</span> ảnh nén thành công | <span style="color:#0284c7">1</span> cảnh báo | <span style="color:#0284c7">1</span> lỗi'</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(chalk.gray(<span style="color:#16a34a">'   Thời gian xử lý: <span style="color:#0284c7">3.</span>2s | Dung lượng tiết kiệm: <span style="color:#0284c7">4.</span>8MB\n'</span>));
+</pre>
+  </div>
+</body></html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Terminal 1: Demo 4.1.1 — Shebang & Cấu trúc CLI</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#ffffff; padding:20px; font-family:'Segoe UI',sans-serif; }
+  .header {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 14px; background:#f0f4ff;
+    border-left:4px solid #0f3460; border-radius:4px; margin-bottom:12px;
+  }
+  .num { font-size:18px; font-weight:800; color:#0f3460; }
+  .title { font-size:13px; font-weight:600; color:#0f3460; flex:1; }
+  .cmd  { font-size:11px; color:#6b7280; font-family:monospace;
+          background:#e5e7eb; padding:2px 6px; border-radius:3px; }
+  .panel { border-radius:8px; overflow:hidden;
+           border:1px solid #334155; box-shadow:0 2px 12px rgba(0,0,0,.15); }
+  .bar { display:flex; align-items:center; gap:6px;
+         padding:8px 14px; background:#1e293b; border-bottom:1px solid #334155; }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dr { background:#ef4444; } .dy { background:#f59e0b; } .dg { background:#22c55e; }
+  .bname { font-size:11.5px; font-weight:600; color:#94a3b8;
+           font-family:monospace; margin-left:6px; }
+  pre { margin:0; padding:16px 18px; background:#0f172a;
+        font-family:Consolas,'Courier New',monospace; font-size:12.5px;
+        line-height:1.7; overflow-x:auto; white-space:pre; color:#e2e8f0; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="num">01</span>
+    <span class="title">Demo 4.1.1 — Shebang &amp; Cấu trúc CLI</span>
+    <span class="cmd">$ node 01-demo-shebang-cli.js</span>
+  </div>
+  <div class="panel">
+    <div class="bar">
+      <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+      <span class="bname">🖥️ Terminal Output — node 01-demo-shebang-cli.js</span>
+    </div>
+    <pre>╔══════════════════════════════════════════════╗
+║   Node.js CLI — Shebang &amp; Entry Point Demo   ║
+╚══════════════════════════════════════════════╝
+
+📌 Thông tin tiến trình Node.js:
+   Node version  : v24.11.1
+   Platform      : win32
+   Architecture  : x64
+   PID           : 13212
+
+📂 Đường dẫn thực thi:
+   process.execPath : C:\Program Files\nodejs\node.exe
+   process.argv[1]  : C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\demo-scripts\01-demo-shebang-cli.js
+
+📦 Cấu trúc package.json cần khai báo để dùng shebang:
+{
+  &quot;name&quot;: &quot;image-resizer-cli&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;bin&quot;: {
+    &quot;resize-img&quot;: &quot;./src/index.js&quot;
+  },
+  &quot;type&quot;: &quot;module&quot;
+}
+
+🔍 Cơ chế Shebang:
+   Dòng đầu file:  #!/usr/bin/env node
+   → OS đọc #! và gọi: /usr/bin/env node &lt;file&gt;
+   → env tìm &quot;node&quot; trong biến $PATH → thực thi
+   → Trên Windows: npm tạo file .cmd thay thế
+
+✅ Script thực thi thành công qua Node.js runtime!</pre>
+  </div>
+</body></html>

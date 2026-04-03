@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Code 5: Demo 4.2.1 — Blocking vs Non-blocking</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#ffffff; padding:20px; font-family:'Segoe UI',sans-serif; }
+  .header {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 14px; background:#f0f4ff;
+    border-left:4px solid #0f3460; border-radius:4px; margin-bottom:12px;
+  }
+  .num { font-size:18px; font-weight:800; color:#0f3460; }
+  .title { font-size:13px; font-weight:600; color:#0f3460; flex:1; }
+  .ffile { font-size:11px; color:#6b7280; font-family:monospace;
+           background:#e5e7eb; padding:2px 6px; border-radius:3px; }
+  .panel { border-radius:8px; overflow:hidden;
+           border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .bar { display:flex; align-items:center; gap:6px;
+         padding:8px 14px; background:#f1f5f9; border-bottom:1px solid #e2e8f0; }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dr { background:#ef4444; } .dy { background:#f59e0b; } .dg { background:#22c55e; }
+  .bname { font-size:12px; font-weight:600; color:#374151;
+           font-family:monospace; margin-left:6px; }
+  pre { margin:0; padding:16px 18px; background:#fafafa;
+        font-family:Consolas,'Courier New',monospace; font-size:12.5px;
+        line-height:1.65; overflow-x:auto; white-space:pre; color:#1e293b; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="num">05</span>
+    <span class="title">Demo 4.2.1 — Blocking vs Non-blocking</span>
+    <span class="ffile">05-demo-blocking-vs-nonblocking.js</span>
+  </div>
+  <div class="panel">
+    <div class="bar">
+      <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+      <span class="bname">📄 05-demo-blocking-vs-nonblocking.js</span>
+    </div>
+    <pre>#!/usr/bin/env node
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+<span style="color:#6b7280;font-style:italic">// DEMO <span style="color:#0284c7">4.2</span>.<span style="color:#0284c7">1</span> — So sánh Blocking vs Non-blocking I/O</span>
+<span style="color:#6b7280;font-style:italic">// Minh họa: fs.readFileSync (chặn luồng) vs fs.promises.readFile</span>
+<span style="color:#6b7280;font-style:italic">//           + Promise.all (song song). Đo thời gian chênh lệch.</span>
+<span style="color:#6b7280;font-style:italic">// Chạy:  node <span style="color:#0284c7">05</span>-demo-blocking-vs-nonblocking.js</span>
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> fs   <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'fs'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> path <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'path'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> { fileURLToPath } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'url'</span>;
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> __dirname = path.dirname(fileURLToPath(<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span>.meta.url));
+
+<span style="color:#6b7280;font-style:italic">// ── Tạo <span style="color:#0284c7">5</span> file giả lập dữ liệu ảnh lớn ──────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> TEMP_DIR  = path.join(__dirname, <span style="color:#16a34a">'_temp_demo'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> NUM_FILES = <span style="color:#0284c7">5</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> FILE_SIZE_KB = <span style="color:#0284c7">500</span>; <span style="color:#6b7280;font-style:italic">// Mỗi file ~500KB</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╔═══════════════════════════════════════════════════════╗'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'║   Demo: Blocking vs Non-blocking I/O — Chương <span style="color:#0284c7">4.2</span>.<span style="color:#0284c7">1</span>  ║'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╚═══════════════════════════════════════════════════════╝\n'</span>);
+
+<span style="color:#6b7280;font-style:italic">// Chuẩn bị: tạo thư mục và file test tạm thời</span>
+fs.mkdirSync(TEMP_DIR, { recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> });
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> filePaths = [];
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">for</span> (<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">let</span> i = <span style="color:#0284c7">1</span>; i &lt;= NUM_FILES; i++) {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> fp = path.join(TEMP_DIR, `test_image_${i}.dat`);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (!fs.existsSync(fp)) {
+    <span style="color:#6b7280;font-style:italic">// Ghi dữ liệu ngẫu nhiên ~500KB để giả lập file ảnh</span>
+    fs.writeFileSync(fp, Buffer.alloc(FILE_SIZE_KB * <span style="color:#0284c7">1024</span>, i));
+  }
+  filePaths.push(fp);
+}
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`📁 Đã tạo ${NUM_FILES} file giả lập (~${FILE_SIZE_KB}KB mỗi file)\n`);
+
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#6b7280;font-style:italic">// MÔ HÌNH <span style="color:#0284c7">1</span>: BLOCKING — fs.readFileSync (đồng bộ)</span>
+<span style="color:#6b7280;font-style:italic">//   CPU dừng chờ từng file xong mới đọc file tiếp theo</span>
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'─── MÔ HÌNH <span style="color:#0284c7">1</span>: Blocking (fs.readFileSync) ───'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   → Đọc tuần tự, luồng JS bị CHẶN sau mỗi file\n'</span>);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> t1Start = performance.now();
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">for</span> (<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> fp <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">of</span> filePaths) {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> data = fs.readFileSync(fp); <span style="color:#6b7280;font-style:italic">// ← CHẶN luồng tại đây</span>
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   📖 Đọc xong: ${path.basename(fp)} (${(data.length / <span style="color:#0284c7">1024</span>).toFixed(<span style="color:#0284c7">0</span>)} KB)`);
+}
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> t1End     = performance.now();
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> blocking  = (t1End - t1Start).toFixed(<span style="color:#0284c7">2</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`\n   ⏱ Tổng thời gian BLOCKING  : ${blocking} ms\n`);
+
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#6b7280;font-style:italic">// MÔ HÌNH <span style="color:#0284c7">2</span>: NON-BLOCKING — fs.promises.readFile + Promise.all</span>
+<span style="color:#6b7280;font-style:italic">//   Tất cả <span style="color:#0284c7">5</span> yêu cầu đọc được gửi CÙNG LÚC, Libuv xử lý song song</span>
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'─── MÔ HÌNH <span style="color:#0284c7">2</span>: Non-blocking (fs.promises + Promise.all) ───'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   → Gửi TẤT CẢ yêu cầu đọc cùng lúc, không chặn luồng JS\n'</span>);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> t2Start = performance.now();
+
+<span style="color:#6b7280;font-style:italic">// Tạo mảng Promise — tất cả I/O khởi động ĐỒNG THỜI</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> readPromises = filePaths.map((fp) =&gt;
+  fs.promises.readFile(fp).then((data) =&gt; {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   📖 Đọc xong: ${path.basename(fp)} (${(data.length / <span style="color:#0284c7">1024</span>).toFixed(<span style="color:#0284c7">0</span>)} KB)`);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">return</span> data;
+  })
+);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> Promise.all(readPromises); <span style="color:#6b7280;font-style:italic">// Chờ TẤT CẢ hoàn thành</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> t2End        = performance.now();
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> nonBlocking  = (t2End - t2Start).toFixed(<span style="color:#0284c7">2</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`\n   ⏱ Tổng thời gian NON-BLOCKING: ${nonBlocking} ms`);
+
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#6b7280;font-style:italic">// KẾT QUẢ SO SÁNH</span>
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> speedup = (parseFloat(blocking) / parseFloat(nonBlocking)).toFixed(<span style="color:#0284c7">2</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n══════════════════════════════════════════════'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'📊 KẾT QUẢ SO SÁNH:'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   Blocking     : ${blocking} ms (tuần tự, <span style="color:#0284c7">1</span> luồng, CPU chờ từng file)`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   Non-blocking : ${nonBlocking} ms (song song, Libuv Thread Pool)`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   🚀 Non-blocking nhanh hơn ~${speedup}x với ${NUM_FILES} file`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   → Khi xử lý <span style="color:#0284c7">1000</span> ảnh: tiết kiệm vài phút thực thi!\n`);
+
+<span style="color:#6b7280;font-style:italic">// Dọn dẹp file tạm</span>
+fs.rmSync(TEMP_DIR, { recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span>, force: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> });
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'🧹 Đã xóa file tạm. Demo hoàn tất.\n'</span>);
+</pre>
+  </div>
+</body></html>

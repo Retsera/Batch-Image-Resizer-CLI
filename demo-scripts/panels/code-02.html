@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Code 2: Demo 4.1.2 — process.argv thủ công</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#ffffff; padding:20px; font-family:'Segoe UI',sans-serif; }
+  .header {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 14px; background:#f0f4ff;
+    border-left:4px solid #0f3460; border-radius:4px; margin-bottom:12px;
+  }
+  .num { font-size:18px; font-weight:800; color:#0f3460; }
+  .title { font-size:13px; font-weight:600; color:#0f3460; flex:1; }
+  .ffile { font-size:11px; color:#6b7280; font-family:monospace;
+           background:#e5e7eb; padding:2px 6px; border-radius:3px; }
+  .panel { border-radius:8px; overflow:hidden;
+           border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .bar { display:flex; align-items:center; gap:6px;
+         padding:8px 14px; background:#f1f5f9; border-bottom:1px solid #e2e8f0; }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dr { background:#ef4444; } .dy { background:#f59e0b; } .dg { background:#22c55e; }
+  .bname { font-size:12px; font-weight:600; color:#374151;
+           font-family:monospace; margin-left:6px; }
+  pre { margin:0; padding:16px 18px; background:#fafafa;
+        font-family:Consolas,'Courier New',monospace; font-size:12.5px;
+        line-height:1.65; overflow-x:auto; white-space:pre; color:#1e293b; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="num">02</span>
+    <span class="title">Demo 4.1.2 — process.argv thủ công</span>
+    <span class="ffile">02-demo-process-argv.js</span>
+  </div>
+  <div class="panel">
+    <div class="bar">
+      <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+      <span class="bname">📄 02-demo-process-argv.js</span>
+    </div>
+    <pre>#!/usr/bin/env node
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+<span style="color:#6b7280;font-style:italic">// DEMO <span style="color:#0284c7">4.1</span>.<span style="color:#0284c7">2</span> (<span style="color:#0284c7">1</span>) — Phân tích tham số thủ công qua <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.argv</span>
+<span style="color:#6b7280;font-style:italic">// Minh họa: cấu trúc mảng <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.argv, slice(<span style="color:#0284c7">2</span>),</span>
+<span style="color:#6b7280;font-style:italic">//           destructuring và vòng lặp parse flag thủ công</span>
+<span style="color:#6b7280;font-style:italic">// Chạy:  node <span style="color:#0284c7">02</span>-demo-<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>-argv.js compress --input ./images --quality <span style="color:#0284c7">80</span> --verbose</span>
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╔══════════════════════════════════════════════╗'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'║       Demo: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.argv — Phân tích thô     ║'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╚══════════════════════════════════════════════╝\n'</span>);
+
+<span style="color:#6b7280;font-style:italic">// ── <span style="color:#0284c7">1</span>. Hiển thị toàn bộ mảng <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.argv thô ────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'📋 [<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.argv] — Mảng đầy đủ (raw):'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.argv.forEach((val, index) =&gt; {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">let</span> label = <span style="color:#16a34a">''</span>;
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (index === <span style="color:#0284c7">0</span>) label = <span style="color:#16a34a">'← index[<span style="color:#0284c7">0</span>]: đường dẫn node.exe'</span>;
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (index === <span style="color:#0284c7">1</span>) label = <span style="color:#16a34a">'← index[<span style="color:#0284c7">1</span>]: đường dẫn script (Entry Point)'</span>;
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (index &gt;= <span style="color:#0284c7">2</span>) label = `← index[${index}]: tham số người dùng`;
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   [${index}] &quot;${val}&quot;  ${label}`);
+});
+
+<span style="color:#6b7280;font-style:italic">// ── <span style="color:#0284c7">2</span>. Cắt bỏ <span style="color:#0284c7">2</span> phần tử hệ thống, lấy args người dùng ───────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> userArgs = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.argv.slice(<span style="color:#0284c7">2</span>);
+<span style="color:#6b7280;font-style:italic">//               └─ Phương pháp slice(<span style="color:#0284c7">2</span>): loại bỏ node + script path</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n✂️  [<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.argv.slice(<span style="color:#0284c7">2</span>)] — Tham số người dùng:'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'  '</span>, userArgs);
+
+<span style="color:#6b7280;font-style:italic">// ── <span style="color:#0284c7">3</span>. Destructuring lấy sub-command ─────────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> [subCommand, ...restArgs] = userArgs;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n🎯 Sub-command (lệnh con):'</span>, subCommand || <span style="color:#16a34a">'(không có)'</span>);
+
+<span style="color:#6b7280;font-style:italic">// ── <span style="color:#0284c7">4</span>. Vòng lặp parse flag thủ công ──────────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> flags = {};
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">for</span> (<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">let</span> i = <span style="color:#0284c7">0</span>; i &lt; restArgs.length; i++) {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> token = restArgs[i];
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (token.startsWith(<span style="color:#16a34a">'--'</span>)) {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> key = token.slice(<span style="color:#0284c7">2</span>);           <span style="color:#6b7280;font-style:italic">// Bỏ dấu &quot;--&quot;</span>
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> nextToken = restArgs[i + <span style="color:#0284c7">1</span>];
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (nextToken &amp;&amp; !nextToken.startsWith(<span style="color:#16a34a">'--'</span>)) {
+      <span style="color:#6b7280;font-style:italic">// Tham số có giá trị: --quality <span style="color:#0284c7">80</span></span>
+      flags[key] = nextToken;
+      i++; <span style="color:#6b7280;font-style:italic">// Bỏ qua token tiếp theo vì đã dùng làm giá trị</span>
+    } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">else</span> {
+      <span style="color:#6b7280;font-style:italic">// Cờ boolean: --verbose (không có giá trị kèm theo)</span>
+      flags[key] = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span>;
+    }
+  }
+}
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n🚩 Flags đã parse (thủ công):'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.table(flags);
+
+<span style="color:#6b7280;font-style:italic">// ── <span style="color:#0284c7">5</span>. Vấn đề của cách parse thủ công ────────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'⚠️  Vấn đề với parse thủ công:'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   - &quot;--quality <span style="color:#0284c7">80</span>&quot;: quality nhận giá trị kiểu STRING &quot;<span style="color:#0284c7">80</span>&quot;'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   - Chưa hỗ trợ alias: -i thay cho --input'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   - Không tự sinh --help, không validate bắt buộc'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   → Giải pháp: dùng thư viện commander (xem demo tiếp theo)\n'</span>);
+</pre>
+  </div>
+</body></html>

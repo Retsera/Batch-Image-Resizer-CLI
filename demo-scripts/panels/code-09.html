@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Code 9: Demo 4.3.2 — path.join vs path.resolve</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#ffffff; padding:20px; font-family:'Segoe UI',sans-serif; }
+  .header {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 14px; background:#f0f4ff;
+    border-left:4px solid #0f3460; border-radius:4px; margin-bottom:12px;
+  }
+  .num { font-size:18px; font-weight:800; color:#0f3460; }
+  .title { font-size:13px; font-weight:600; color:#0f3460; flex:1; }
+  .ffile { font-size:11px; color:#6b7280; font-family:monospace;
+           background:#e5e7eb; padding:2px 6px; border-radius:3px; }
+  .panel { border-radius:8px; overflow:hidden;
+           border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .bar { display:flex; align-items:center; gap:6px;
+         padding:8px 14px; background:#f1f5f9; border-bottom:1px solid #e2e8f0; }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dr { background:#ef4444; } .dy { background:#f59e0b; } .dg { background:#22c55e; }
+  .bname { font-size:12px; font-weight:600; color:#374151;
+           font-family:monospace; margin-left:6px; }
+  pre { margin:0; padding:16px 18px; background:#fafafa;
+        font-family:Consolas,'Courier New',monospace; font-size:12.5px;
+        line-height:1.65; overflow-x:auto; white-space:pre; color:#1e293b; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="num">09</span>
+    <span class="title">Demo 4.3.2 — path.join vs path.resolve</span>
+    <span class="ffile">09-demo-path-join-resolve.js</span>
+  </div>
+  <div class="panel">
+    <div class="bar">
+      <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+      <span class="bname">📄 09-demo-path-join-resolve.js</span>
+    </div>
+    <pre>#!/usr/bin/env node
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+<span style="color:#6b7280;font-style:italic">// DEMO <span style="color:#0284c7">4.3</span>.<span style="color:#0284c7">2</span> — path.join vs path.resolve: so sánh cơ chế</span>
+<span style="color:#6b7280;font-style:italic">// Minh họa: nối từ vựng tuyến tính (join) vs dịch chuyển không</span>
+<span style="color:#6b7280;font-style:italic">//           gian ngữ cảnh tuyệt đối (resolve), <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.cwd()</span>
+<span style="color:#6b7280;font-style:italic">// Chạy:  node <span style="color:#0284c7">09</span>-demo-path-join-resolve.js</span>
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> path <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'path'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> { fileURLToPath } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'url'</span>;
+
+<span style="color:#6b7280;font-style:italic">// Trong ESM, không có __dirname sẵn — phải tự dựng</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> __filename = fileURLToPath(<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span>.meta.url);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> __dirname  = path.dirname(__filename);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╔════════════════════════════════════════════════════════╗'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'║   Demo: path.join vs path.resolve — Chương <span style="color:#0284c7">4.3</span>.<span style="color:#0284c7">2</span>      ║'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╚════════════════════════════════════════════════════════╝\n'</span>);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'📌 Ngữ cảnh thực thi:'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.cwd()  = &quot;${<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.cwd()}&quot;`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`               ↑ Thư mục người dùng ĐANG LÀM VIỆC (Working Directory)`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   __dirname      = &quot;${__dirname}&quot;`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`               ↑ Thư mục chứa file script này\n`);
+
+<span style="color:#6b7280;font-style:italic">// ── Hàm tiện ích hiển thị so sánh ────────────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">function</span> compare(label, args) {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> joined   = path.join(...args);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> resolved = path.resolve(...args);
+
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`  📁 Input: [${args.map((a) =&gt; `&quot;${a}&quot;`).join(<span style="color:#16a34a">', '</span>)}]`);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`     path.join    → &quot;${joined}&quot;`);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`     path.resolve → &quot;${resolved}&quot;`);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> isAbsJoin = path.isAbsolute(joined);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> isAbsRes  = path.isAbsolute(resolved);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`     isAbsolute   join=${isAbsJoin} | resolve=${isAbsRes}`);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">''</span>);
+}
+
+<span style="color:#6b7280;font-style:italic">// ── TEST CASE <span style="color:#0284c7">1</span>: Chỉ có đường dẫn tương đối ──────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'─── TEST <span style="color:#0284c7">1</span>: Tất cả tham số tương đối ───'</span>);
+compare(<span style="color:#16a34a">'relative only'</span>, [<span style="color:#16a34a">'images'</span>, <span style="color:#16a34a">'raw'</span>, <span style="color:#16a34a">'img1.jpg'</span>]);
+
+<span style="color:#6b7280;font-style:italic">// ── TEST CASE <span style="color:#0284c7">2</span>: Đường dẫn có segment điều hướng ─────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'─── TEST <span style="color:#0284c7">2</span>: Có ký tự điều hướng (..) ───'</span>);
+compare(<span style="color:#16a34a">'navigate up'</span>, [<span style="color:#16a34a">'images'</span>, <span style="color:#16a34a">'..'</span>, <span style="color:#16a34a">'output'</span>, <span style="color:#16a34a">'result.jpg'</span>]);
+
+<span style="color:#6b7280;font-style:italic">// ── TEST CASE <span style="color:#0284c7">3</span>: Tham số đầu tiên là tuyệt đối ───────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'─── TEST <span style="color:#0284c7">3</span>: Tham số đầu có đường dẫn tuyệt đối ───'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> root = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.platform === <span style="color:#16a34a">'win32'</span> ? <span style="color:#16a34a">'C:\\Projects'</span> : <span style="color:#16a34a">'/home/admin/project'</span>;
+compare(<span style="color:#16a34a">'first abs'</span>, [root, <span style="color:#16a34a">'images'</span>, <span style="color:#16a34a">'photo.jpg'</span>]);
+
+<span style="color:#6b7280;font-style:italic">// ── TEST CASE <span style="color:#0284c7">4</span>: Giữa dãy có đường dẫn tuyệt đối (BẪY!) ─────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'─── TEST <span style="color:#0284c7">4</span>: ⚠️  Bẫy! Tham số giữa dãy có đường dẫn tuyệt đối ───'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> abs2 = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.platform === <span style="color:#16a34a">'win32'</span> ? <span style="color:#16a34a">'C:\\Logs'</span> : <span style="color:#16a34a">'/<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">var</span>/log'</span>;
+compare(<span style="color:#16a34a">'mid abs TRAP'</span>, [root, abs2, <span style="color:#16a34a">'app.log'</span>]);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'  ⚠️  Giải thích:'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'     path.join : ghép bình thường, giữ cả hai'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`     path.resolve: quét NGƯỢC từ phải, gặp &quot;${abs2}&quot; là tuyệt đối → DỪNG ngay!`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`     → Bỏ qua &quot;${root}&quot;, chỉ giữ từ &quot;${abs2}&quot; trở đi\n`);
+
+<span style="color:#6b7280;font-style:italic">// ── TEST CASE <span style="color:#0284c7">5</span>: Ứng dụng thực trong CLI xử lý ảnh ───────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'─── TEST <span style="color:#0284c7">5</span>: Ứng dụng thực — Xây dựng đường dẫn output ───'</span>);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> userInput  = <span style="color:#16a34a">'./my_photos'</span>;       <span style="color:#6b7280;font-style:italic">// Tham số người dùng nhập</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> outputBase = <span style="color:#16a34a">'resized'</span>;
+
+<span style="color:#6b7280;font-style:italic">// ❌ Sai: dùng __dirname — tìm file trong thư mục cài đặt npm</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> wrongPath  = path.join(__dirname, userInput, <span style="color:#16a34a">'photo.jpg'</span>);
+<span style="color:#6b7280;font-style:italic">// ✅ Đúng: dùng <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.cwd() — tìm file ở thư mục người dùng đang đứng</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> rightPath  = path.resolve(<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.cwd(), userInput, <span style="color:#16a34a">'photo.jpg'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> outputPath = path.resolve(<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.cwd(), outputBase, <span style="color:#16a34a">'photo_resized.jpg'</span>);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'  ❌ Dùng __dirname (sai với CLI tool):'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`     ${wrongPath}`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'  ✅ Dùng <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.cwd() (đúng — theo vị trí người dùng):'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`     Input  : ${rightPath}`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`     Output : ${outputPath}\n`);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'  💡 Quy tắc vàng:'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'     __dirname → File nằm trong package code (ví dụ: đọc template nội bộ)'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'     <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.cwd() → File nằm theo ngữ cảnh terminal của người dùng\n'</span>);
+</pre>
+  </div>
+</body></html>

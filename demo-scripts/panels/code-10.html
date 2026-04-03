@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Code 10: Demo 4.3.3 — fs.promises thao tác tệp</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#ffffff; padding:20px; font-family:'Segoe UI',sans-serif; }
+  .header {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 14px; background:#f0f4ff;
+    border-left:4px solid #0f3460; border-radius:4px; margin-bottom:12px;
+  }
+  .num { font-size:18px; font-weight:800; color:#0f3460; }
+  .title { font-size:13px; font-weight:600; color:#0f3460; flex:1; }
+  .ffile { font-size:11px; color:#6b7280; font-family:monospace;
+           background:#e5e7eb; padding:2px 6px; border-radius:3px; }
+  .panel { border-radius:8px; overflow:hidden;
+           border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .bar { display:flex; align-items:center; gap:6px;
+         padding:8px 14px; background:#f1f5f9; border-bottom:1px solid #e2e8f0; }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dr { background:#ef4444; } .dy { background:#f59e0b; } .dg { background:#22c55e; }
+  .bname { font-size:12px; font-weight:600; color:#374151;
+           font-family:monospace; margin-left:6px; }
+  pre { margin:0; padding:16px 18px; background:#fafafa;
+        font-family:Consolas,'Courier New',monospace; font-size:12.5px;
+        line-height:1.65; overflow-x:auto; white-space:pre; color:#1e293b; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="num">10</span>
+    <span class="title">Demo 4.3.3 — fs.promises thao tác tệp</span>
+    <span class="ffile">10-demo-fs-operations.js</span>
+  </div>
+  <div class="panel">
+    <div class="bar">
+      <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+      <span class="bname">📄 10-demo-fs-operations.js</span>
+    </div>
+    <pre>#!/usr/bin/env node
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+<span style="color:#6b7280;font-style:italic">// DEMO <span style="color:#0284c7">4.3</span>.<span style="color:#0284c7">3</span> — Thao tác hệ thống tệp cốt lõi với fs.promises</span>
+<span style="color:#6b7280;font-style:italic">// Minh họa: readdir (quét thư mục), stat (isFile/isDirectory),</span>
+<span style="color:#6b7280;font-style:italic">//           mkdir recursive, xử lý lỗi quyền truy cập</span>
+<span style="color:#6b7280;font-style:italic">// Chạy:  node <span style="color:#0284c7">10</span>-demo-fs-operations.js</span>
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> fs   <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'fs'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> path <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'path'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> { fileURLToPath } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'url'</span>;
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> __dirname = path.dirname(fileURLToPath(<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span>.meta.url));
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╔════════════════════════════════════════════════════════╗'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'║   Demo: fs.promises thao tác tệp hệ thống — <span style="color:#0284c7">4.3</span>.<span style="color:#0284c7">3</span>    ║'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╚════════════════════════════════════════════════════════╝\n'</span>);
+
+<span style="color:#6b7280;font-style:italic">// ── Chuẩn bị cấu trúc thư mục mẫu ────────────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> DEMO_DIR = path.join(__dirname, <span style="color:#16a34a">'_temp_fs_demo'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> SCAN_DIR = path.join(DEMO_DIR, <span style="color:#16a34a">'batch_input'</span>);
+
+<span style="color:#6b7280;font-style:italic">// Tạo cấu trúc thư mục và file mẫu để quét</span>
+fs.mkdirSync(path.join(SCAN_DIR, <span style="color:#16a34a">'subfolder'</span>), { recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> });
+fs.writeFileSync(path.join(SCAN_DIR, <span style="color:#16a34a">'photo_01.jpg'</span>),  Buffer.alloc(<span style="color:#0284c7">1024</span> * <span style="color:#0284c7">200</span>));
+fs.writeFileSync(path.join(SCAN_DIR, <span style="color:#16a34a">'banner.png'</span>),   Buffer.alloc(<span style="color:#0284c7">1024</span> * <span style="color:#0284c7">500</span>));
+fs.writeFileSync(path.join(SCAN_DIR, <span style="color:#16a34a">'notes.txt'</span>),    Buffer.<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span>(<span style="color:#16a34a">'Ghi chú'</span>));
+fs.writeFileSync(path.join(SCAN_DIR, <span style="color:#16a34a">'icon.svg'</span>),     Buffer.<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span>(<span style="color:#16a34a">'&lt;svg/&gt;'</span>));
+fs.writeFileSync(path.join(SCAN_DIR, <span style="color:#16a34a">'thumbnail.jpeg'</span>), Buffer.alloc(<span style="color:#0284c7">1024</span> * <span style="color:#0284c7">80</span>));
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`📁 Cấu trúc mẫu đã tạo tại: ${SCAN_DIR}\n`);
+
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#6b7280;font-style:italic">// BƯỚC <span style="color:#0284c7">1</span>: fs.promises.readdir — Quét và liệt kê nội dung thư mục</span>
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'─── BƯỚC <span style="color:#0284c7">1</span>: fs.promises.readdir ───'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">try</span> {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> entries = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.readdir(SCAN_DIR, { withFileTypes: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> });
+  <span style="color:#6b7280;font-style:italic">//                                                 └─ withFileTypes=<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> → trả về Dirent</span>
+  <span style="color:#6b7280;font-style:italic">//                                                    (không cần gọi stat thêm để biết loại)</span>
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   Tìm thấy ${entries.length} mục trong thư mục:\n`);
+
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">for</span> (<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> entry <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">of</span> entries) {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> type = entry.isDirectory() ? <span style="color:#16a34a">'[THƯ MỤC]'</span> : <span style="color:#16a34a">'[FILE]   '</span>;
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ${type}  ${entry.name}`);
+  }
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">''</span>);
+} <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">catch</span> (err) {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ❌ Lỗi readdir: ${err.message}`);
+}
+
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#6b7280;font-style:italic">// BƯỚC <span style="color:#0284c7">2</span>: fs.promises.stat — Trích xuất siêu dữ liệu từng file</span>
+<span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'─── BƯỚC <span style="color:#0284c7">2</span>: fs.promises.stat — Kiểm tra siêu dữ liệu ───'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> IMAGE_EXTS = [<span style="color:#16a34a">'.jpg'</span>, <span style="color:#16a34a">'.jpeg'</span>, <span style="color:#16a34a">'.png'</span>, <span style="color:#16a34a">'.webp'</span>, <span style="color:#16a34a">'.avif'</span>];
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">try</span> {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> entries = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.readdir(SCAN_DIR, { withFileTypes: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> });
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> imageFiles = [];
+
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">for</span> (<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> entry <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">of</span> entries) {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (!entry.isFile()) continue; <span style="color:#6b7280;font-style:italic">// Bỏ qua thư mục con</span>
+
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> fullPath = path.join(SCAN_DIR, entry.name);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> stat     = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.stat(fullPath);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> ext      = path.extname(entry.name).toLowerCase();
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> isImage  = IMAGE_EXTS.includes(ext);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> sizeKB   = (stat.size / <span style="color:#0284c7">1024</span>).toFixed(<span style="color:#0284c7">1</span>);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> modified = stat.mtime.toLocaleTimeString(<span style="color:#16a34a">'vi-VN'</span>);
+
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   📄 ${entry.name}`);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`      isFile()     : ${stat.isFile()}`);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`      isDirectory(): ${stat.isDirectory()}`);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`      Kích thước   : ${sizeKB} KB`);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`      Sửa đổi lần cuối: ${modified}`);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`      Hợp lệ (ảnh): ${isImage ? <span style="color:#16a34a">'✅ Có'</span> : <span style="color:#16a34a">'❌ Không — sẽ bỏ qua'</span>}`);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">''</span>);
+
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (isImage) imageFiles.push({ name: entry.name, path: fullPath, sizeKB });
+  }
+
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   📊 Tổng kết: ${imageFiles.length} file ảnh hợp lệ / ${entries.length} mục\n`);
+
+  <span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+  <span style="color:#6b7280;font-style:italic">// BƯỚC <span style="color:#0284c7">3</span>: fs.promises.mkdir — Tạo thư mục output an toàn</span>
+  <span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'─── BƯỚC <span style="color:#0284c7">3</span>: fs.promises.mkdir — Tạo thư mục output ───'</span>);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> OUTPUT_DIR = path.join(DEMO_DIR, <span style="color:#16a34a">'processed'</span>, <span style="color:#16a34a">'<span style="color:#0284c7">2024</span>'</span>, <span style="color:#16a34a">'january'</span>);
+  <span style="color:#6b7280;font-style:italic">//                                     └─ Chuỗi thư mục lồng nhau sâu <span style="color:#0284c7">3</span> cấp</span>
+
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">try</span> {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.mkdir(OUTPUT_DIR, { recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> });
+    <span style="color:#6b7280;font-style:italic">//                                   └─ recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span></span>
+    <span style="color:#6b7280;font-style:italic">//                                      → Tạo cả chuỗi &quot;processed/<span style="color:#0284c7">2024</span>/january&quot;</span>
+    <span style="color:#6b7280;font-style:italic">//                                      → KHÔNG ném lỗi nếu đã tồn tại sẵn</span>
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ✅ Tạo thành công: &quot;${OUTPUT_DIR}&quot;`);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'      (recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> → tạo cả <span style="color:#0284c7">3</span> cấp thư mục lồng nhau)\n'</span>);
+  } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">catch</span> (err) {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (err.code === <span style="color:#16a34a">'EACCES'</span>) {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ❌ Lỗi EACCES: Không đủ quyền ghi — ${err.message}`);
+    } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">else</span> {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ❌ Lỗi: ${err.message}`);
+    }
+  }
+
+  <span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+  <span style="color:#6b7280;font-style:italic">// BƯỚC <span style="color:#0284c7">4</span>: Giả lập xử lý — copy ảnh hợp lệ sang output</span>
+  <span style="color:#6b7280;font-style:italic">// ═══════════════════════════════════════════════════════════════</span>
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'─── BƯỚC <span style="color:#0284c7">4</span>: Sao chép ảnh vào thư mục output ───'</span>);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">for</span> (<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> img <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">of</span> imageFiles) {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> destPath = path.join(OUTPUT_DIR, img.name);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">try</span> {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.copyFile(img.path, destPath);
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ✅ ${img.name} (${img.sizeKB}KB) → output hoàn tất`);
+    } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">catch</span> (err) {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ❌ ${img.name} → Lỗi: ${err.message}`);
+    }
+  }
+
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n✅ Tất cả thao tác fs.promises hoàn tất!\n'</span>);
+} <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">catch</span> (err) {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`❌ Lỗi tổng: ${err.message}`);
+}
+
+<span style="color:#6b7280;font-style:italic">// ── Dọn dẹp ──────────────────────────────────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.rm(DEMO_DIR, { recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span>, force: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> });
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'🧹 Đã xóa toàn bộ thư mục demo. Kết thúc.\n'</span>);
+</pre>
+  </div>
+</body></html>

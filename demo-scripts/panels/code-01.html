@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Code 1: Demo 4.1.1 — Shebang & Cấu trúc CLI</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#ffffff; padding:20px; font-family:'Segoe UI',sans-serif; }
+  .header {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 14px; background:#f0f4ff;
+    border-left:4px solid #0f3460; border-radius:4px; margin-bottom:12px;
+  }
+  .num { font-size:18px; font-weight:800; color:#0f3460; }
+  .title { font-size:13px; font-weight:600; color:#0f3460; flex:1; }
+  .ffile { font-size:11px; color:#6b7280; font-family:monospace;
+           background:#e5e7eb; padding:2px 6px; border-radius:3px; }
+  .panel { border-radius:8px; overflow:hidden;
+           border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .bar { display:flex; align-items:center; gap:6px;
+         padding:8px 14px; background:#f1f5f9; border-bottom:1px solid #e2e8f0; }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dr { background:#ef4444; } .dy { background:#f59e0b; } .dg { background:#22c55e; }
+  .bname { font-size:12px; font-weight:600; color:#374151;
+           font-family:monospace; margin-left:6px; }
+  pre { margin:0; padding:16px 18px; background:#fafafa;
+        font-family:Consolas,'Courier New',monospace; font-size:12.5px;
+        line-height:1.65; overflow-x:auto; white-space:pre; color:#1e293b; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="num">01</span>
+    <span class="title">Demo 4.1.1 — Shebang &amp; Cấu trúc CLI</span>
+    <span class="ffile">01-demo-shebang-cli.js</span>
+  </div>
+  <div class="panel">
+    <div class="bar">
+      <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+      <span class="bname">📄 01-demo-shebang-cli.js</span>
+    </div>
+    <pre>#!/usr/bin/env node
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+<span style="color:#6b7280;font-style:italic">// DEMO <span style="color:#0284c7">4.1</span>.<span style="color:#0284c7">1</span> — Shebang &amp; Cấu trúc CLI cơ bản trong Node.js</span>
+<span style="color:#6b7280;font-style:italic">// Minh họa: dòng shebang, thông tin môi trường tiến trình,</span>
+<span style="color:#6b7280;font-style:italic">//           và cách khai báo bin trong package.json</span>
+<span style="color:#6b7280;font-style:italic">// Chạy:  node <span style="color:#0284c7">01</span>-demo-shebang-cli.js</span>
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+
+<span style="color:#6b7280;font-style:italic">// ── <span style="color:#0284c7">1</span>. Thông tin môi trường runtime ──────────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╔══════════════════════════════════════════════╗'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'║   Node.js CLI — Shebang &amp; Entry Point Demo   ║'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╚══════════════════════════════════════════════╝\n'</span>);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'📌 Thông tin tiến trình Node.js:'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   Node version  :'</span>, <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.version);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   Platform      :'</span>, <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.platform);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   Architecture  :'</span>, <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.arch);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   PID           :'</span>, <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.pid);
+
+<span style="color:#6b7280;font-style:italic">// ── <span style="color:#0284c7">2</span>. Thông tin về file thực thi ────────────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n📂 Đường dẫn thực thi:'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.execPath :'</span>, <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.execPath);
+<span style="color:#6b7280;font-style:italic">//    → Đường dẫn tới tệp nhị phân node.exe</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.argv[<span style="color:#0284c7">1</span>]  :'</span>, <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.argv[<span style="color:#0284c7">1</span>]);
+<span style="color:#6b7280;font-style:italic">//    → Đường dẫn tới script JS đang chạy (Entry Point)</span>
+
+<span style="color:#6b7280;font-style:italic">// ── <span style="color:#0284c7">3</span>. Mô phỏng cấu trúc package.json → bin ──────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n📦 Cấu trúc package.json cần khai báo để dùng shebang:'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> packageJsonExample = {
+  name: <span style="color:#16a34a">'image-resizer-cli'</span>,
+  version: <span style="color:#16a34a">'<span style="color:#0284c7">1.0</span>.<span style="color:#0284c7">0</span>'</span>,
+  bin: {
+    <span style="color:#16a34a">'resize-img'</span>: <span style="color:#16a34a">'./src/index.js'</span>,
+    <span style="color:#6b7280;font-style:italic">//  └─ Sau npm install -g, gõ &quot;resize-img&quot; sẽ gọi file này</span>
+  },
+  type: <span style="color:#16a34a">'module'</span>,
+};
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(JSON.stringify(packageJsonExample, <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">null</span>, <span style="color:#0284c7">2</span>));
+
+<span style="color:#6b7280;font-style:italic">// ── <span style="color:#0284c7">4</span>. Giải thích cơ chế shebang ──────────────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n🔍 Cơ chế Shebang:'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   Dòng đầu file:  #!/usr/bin/env node'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   → OS đọc #! và gọi: /usr/bin/env node &lt;file&gt;'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   → env tìm &quot;node&quot; trong biến $PATH → thực thi'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   → Trên Windows: npm tạo file .cmd thay thế\n'</span>);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'✅ Script thực thi thành công qua Node.js runtime!'</span>);
+</pre>
+  </div>
+</body></html>

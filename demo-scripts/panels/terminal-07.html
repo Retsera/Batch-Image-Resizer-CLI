@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Terminal 7: Demo 4.2.3 — async/await + fs.promises</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#ffffff; padding:20px; font-family:'Segoe UI',sans-serif; }
+  .header {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 14px; background:#f0f4ff;
+    border-left:4px solid #0f3460; border-radius:4px; margin-bottom:12px;
+  }
+  .num { font-size:18px; font-weight:800; color:#0f3460; }
+  .title { font-size:13px; font-weight:600; color:#0f3460; flex:1; }
+  .cmd  { font-size:11px; color:#6b7280; font-family:monospace;
+          background:#e5e7eb; padding:2px 6px; border-radius:3px; }
+  .panel { border-radius:8px; overflow:hidden;
+           border:1px solid #334155; box-shadow:0 2px 12px rgba(0,0,0,.15); }
+  .bar { display:flex; align-items:center; gap:6px;
+         padding:8px 14px; background:#1e293b; border-bottom:1px solid #334155; }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dr { background:#ef4444; } .dy { background:#f59e0b; } .dg { background:#22c55e; }
+  .bname { font-size:11.5px; font-weight:600; color:#94a3b8;
+           font-family:monospace; margin-left:6px; }
+  pre { margin:0; padding:16px 18px; background:#0f172a;
+        font-family:Consolas,'Courier New',monospace; font-size:12.5px;
+        line-height:1.7; overflow-x:auto; white-space:pre; color:#e2e8f0; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="num">07</span>
+    <span class="title">Demo 4.2.3 — async/await + fs.promises</span>
+    <span class="cmd">$ node 07-demo-async-await.js</span>
+  </div>
+  <div class="panel">
+    <div class="bar">
+      <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+      <span class="bname">🖥️ Terminal Output — node 07-demo-async-await.js</span>
+    </div>
+    <pre>╔══════════════════════════════════════════════════╗
+║   Demo: async/await + fs.promises — Chương 4.2.3 ║
+╚══════════════════════════════════════════════════╝
+
+
+─── Pipeline async/await — Tuần tự nhưng không chặn ───
+
+🔍 Kiểm tra thư mục đầu vào: &quot;C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\images&quot;
+   ✅ Thư mục hợp lệ — Kích thước: (thư mục, không có size)
+
+📂 Chuẩn bị thư mục đầu ra: &quot;C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\demo-scripts\_temp_output&quot;
+   ✅ Thư mục output sẵn sàng (mới tạo hoặc đã tồn tại)
+
+📋 Quét danh sách file trong: &quot;C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\images&quot;
+   ⚠️  Không tìm thấy file ảnh hợp lệ!
+
+─── Test với thư mục KHÔNG tồn tại ───
+
+
+─── Pipeline async/await — Tuần tự nhưng không chặn ───
+
+🔍 Kiểm tra thư mục đầu vào: &quot;/duong/dan/khong/ton/tai&quot;
+   ❌ Lỗi: Thư mục không tồn tại (ENOENT)
+
+⛔ Dừng pipeline: thư mục đầu vào không hợp lệ.
+🧹 Đã xóa thư mục output tạm.</pre>
+  </div>
+</body></html>

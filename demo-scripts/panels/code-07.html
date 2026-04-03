@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Code 7: Demo 4.2.3 — async/await + fs.promises</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#ffffff; padding:20px; font-family:'Segoe UI',sans-serif; }
+  .header {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 14px; background:#f0f4ff;
+    border-left:4px solid #0f3460; border-radius:4px; margin-bottom:12px;
+  }
+  .num { font-size:18px; font-weight:800; color:#0f3460; }
+  .title { font-size:13px; font-weight:600; color:#0f3460; flex:1; }
+  .ffile { font-size:11px; color:#6b7280; font-family:monospace;
+           background:#e5e7eb; padding:2px 6px; border-radius:3px; }
+  .panel { border-radius:8px; overflow:hidden;
+           border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .bar { display:flex; align-items:center; gap:6px;
+         padding:8px 14px; background:#f1f5f9; border-bottom:1px solid #e2e8f0; }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dr { background:#ef4444; } .dy { background:#f59e0b; } .dg { background:#22c55e; }
+  .bname { font-size:12px; font-weight:600; color:#374151;
+           font-family:monospace; margin-left:6px; }
+  pre { margin:0; padding:16px 18px; background:#fafafa;
+        font-family:Consolas,'Courier New',monospace; font-size:12.5px;
+        line-height:1.65; overflow-x:auto; white-space:pre; color:#1e293b; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="num">07</span>
+    <span class="title">Demo 4.2.3 — async/await + fs.promises</span>
+    <span class="ffile">07-demo-async-await.js</span>
+  </div>
+  <div class="panel">
+    <div class="bar">
+      <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+      <span class="bname">📄 07-demo-async-await.js</span>
+    </div>
+    <pre>#!/usr/bin/env node
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+<span style="color:#6b7280;font-style:italic">// DEMO <span style="color:#0284c7">4.2</span>.<span style="color:#0284c7">3</span> — Quản lý I/O với fs.promises + <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">async</span>/<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span></span>
+<span style="color:#6b7280;font-style:italic">// Minh họa: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">async</span> <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">function</span>, <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span>, <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">try</span>/<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">catch</span> tập trung,</span>
+<span style="color:#6b7280;font-style:italic">//           kiểm tra thư mục tồn tại, tạo output an toàn</span>
+<span style="color:#6b7280;font-style:italic">// Chạy:  node <span style="color:#0284c7">07</span>-demo-<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">async</span>-<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span>.js</span>
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> fs   <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'fs'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> path <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'path'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> { fileURLToPath } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'url'</span>;
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> __dirname = path.dirname(fileURLToPath(<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span>.meta.url));
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╔══════════════════════════════════════════════════╗'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'║   Demo: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">async</span>/<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> + fs.promises — Chương <span style="color:#0284c7">4.2</span>.<span style="color:#0284c7">3</span> ║'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╚══════════════════════════════════════════════════╝\n'</span>);
+
+<span style="color:#6b7280;font-style:italic">// ── BƯỚC <span style="color:#0284c7">1</span>: Hàm kiểm tra thư mục đầu vào tồn tại không ──────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">async</span> <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">function</span> checkInputDirectory(inputDir) {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`🔍 Kiểm tra thư mục đầu vào: &quot;${inputDir}&quot;`);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">try</span> {
+    <span style="color:#6b7280;font-style:italic">// fs.promises.access: kiểm tra quyền truy cập (không đọc nội dung)</span>
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.access(inputDir, fs.constants.R_OK);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> stat = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.stat(inputDir);
+
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (!stat.isDirectory()) {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">throw</span> <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">new</span> Error(`&quot;${inputDir}&quot; tồn tại nhưng không phải thư mục!`);
+    }
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ✅ Thư mục hợp lệ — Kích thước: (thư mục, không có size)`);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">return</span> <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span>;
+  } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">catch</span> (err) {
+    <span style="color:#6b7280;font-style:italic">// <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">try</span>/<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">catch</span> TẬP TRUNG: <span style="color:#0284c7">1</span> chỗ xử lý mọi lỗi fs</span>
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (err.code === <span style="color:#16a34a">'ENOENT'</span>) {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ❌ Lỗi: Thư mục không tồn tại (ENOENT)`);
+    } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">else</span> <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (err.code === <span style="color:#16a34a">'EACCES'</span>) {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ❌ Lỗi: Không có quyền đọc thư mục (EACCES)`);
+    } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">else</span> {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ❌ Lỗi: ${err.message}`);
+    }
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">return</span> <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">false</span>;
+  }
+}
+
+<span style="color:#6b7280;font-style:italic">// ── BƯỚC <span style="color:#0284c7">2</span>: Hàm tạo thư mục output an toàn ───────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">async</span> <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">function</span> ensureOutputDirectory(outputDir) {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`\n📂 Chuẩn bị thư mục đầu ra: &quot;${outputDir}&quot;`);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">try</span> {
+    <span style="color:#6b7280;font-style:italic">// recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> → không ném lỗi nếu thư mục đã tồn tại</span>
+    <span style="color:#6b7280;font-style:italic">//                 → tự tạo cả chuỗi thư mục cha</span>
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.mkdir(outputDir, { recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> });
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ✅ Thư mục output sẵn sàng (mới tạo hoặc đã tồn tại)`);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">return</span> <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span>;
+  } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">catch</span> (err) {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (err.code === <span style="color:#16a34a">'EACCES'</span>) {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ❌ Lỗi EACCES: Không đủ quyền tạo thư mục tại &quot;${outputDir}&quot;`);
+    } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">else</span> {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ❌ Lỗi không xác định: ${err.message}`);
+    }
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">return</span> <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">false</span>;
+  }
+}
+
+<span style="color:#6b7280;font-style:italic">// ── BƯỚC <span style="color:#0284c7">3</span>: Pipeline xử lý <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">async</span> chính ───────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">async</span> <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">function</span> processImageBatch(inputDir, outputDir) {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n─── Pipeline <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">async</span>/<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> — Tuần tự nhưng không chặn ───\n'</span>);
+
+  <span style="color:#6b7280;font-style:italic">// Bước 3a: Kiểm tra input</span>
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> inputOk = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> checkInputDirectory(inputDir);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (!inputOk) {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n⛔ Dừng pipeline: thư mục đầu vào không hợp lệ.'</span>);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">return</span>;
+  }
+
+  <span style="color:#6b7280;font-style:italic">// Bước 3b: Chuẩn bị output</span>
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> outputOk = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> ensureOutputDirectory(outputDir);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (!outputOk) {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n⛔ Dừng pipeline: không thể tạo thư mục đầu ra.'</span>);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">return</span>;
+  }
+
+  <span style="color:#6b7280;font-style:italic">// Bước 3c: Quét danh sách file ảnh          </span>
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`\n📋 Quét danh sách file trong: &quot;${inputDir}&quot;`);
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">try</span> {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> entries = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.readdir(inputDir, { withFileTypes: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> });
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> imageExts = [<span style="color:#16a34a">'.jpg'</span>, <span style="color:#16a34a">'.jpeg'</span>, <span style="color:#16a34a">'.png'</span>, <span style="color:#16a34a">'.webp'</span>, <span style="color:#16a34a">'.avif'</span>];
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> imageFiles = entries.filter(
+      (e) =&gt; e.isFile() &amp;&amp; imageExts.includes(path.extname(e.name).toLowerCase())
+    );
+
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">if</span> (imageFiles.length === <span style="color:#0284c7">0</span>) {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'   ⚠️  Không tìm thấy file ảnh hợp lệ!'</span>);
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">return</span>;
+    }
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ✅ Tìm thấy ${imageFiles.length} file ảnh:`);
+    imageFiles.forEach((f) =&gt; <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`      - ${f.name}`));
+
+    <span style="color:#6b7280;font-style:italic">// Bước 3d: Xử lý từng ảnh (giả lập <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">async</span>)</span>
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n⚙️  Bắt đầu xử lý từng ảnh (<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> trong vòng lặp):'</span>);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">for</span> (<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> file <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">of</span> imageFiles) {
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> srcPath  = path.join(inputDir, file.name);
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> stat     = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.stat(srcPath);
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> sizeKB   = (stat.size / <span style="color:#0284c7">1024</span>).toFixed(<span style="color:#0284c7">1</span>);
+      <span style="color:#6b7280;font-style:italic">// Giả lập: đọc buffer, nén, ghi ra output</span>
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">new</span> Promise((r) =&gt; setTimeout(r, <span style="color:#0284c7">50</span>)); <span style="color:#6b7280;font-style:italic">// Giả lập 50ms nén</span>
+      <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   ✔ ${file.name} (${sizeKB}KB) → output xong`);
+    }
+
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`\n✅ Pipeline hoàn tất! ${imageFiles.length} ảnh đã xử lý.\n`);
+  } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">catch</span> (err) {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`\n❌ Lỗi khi đọc thư mục: ${err.message}`);
+  }
+}
+
+<span style="color:#6b7280;font-style:italic">// ── Chạy demo với thư mục thực của project ───────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> INPUT_DIR  = path.join(__dirname, <span style="color:#16a34a">'..'</span>, <span style="color:#16a34a">'images'</span>);  <span style="color:#6b7280;font-style:italic">// Thư mục images thực</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> OUTPUT_DIR = path.join(__dirname, <span style="color:#16a34a">'_temp_output'</span>);  <span style="color:#6b7280;font-style:italic">// Thư mục output demo</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> processImageBatch(INPUT_DIR, OUTPUT_DIR);
+
+<span style="color:#6b7280;font-style:italic">// Test thêm: thư mục KHÔNG TỒN TẠI</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'\n─── Test với thư mục KHÔNG tồn tại ───\n'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> processImageBatch(<span style="color:#16a34a">'/duong/dan/khong/ton/tai'</span>, OUTPUT_DIR);
+
+<span style="color:#6b7280;font-style:italic">// Dọn dẹp</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.rm(OUTPUT_DIR, { recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span>, force: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> }).<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">catch</span>(() =&gt; {});
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'🧹 Đã xóa thư mục output tạm.\n'</span>);
+</pre>
+  </div>
+</body></html>

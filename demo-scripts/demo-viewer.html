@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Node.js CLI Chương 4 — Demo Scripts</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #ffffff;
+    color: #1a1a2e;
+    padding: 32px;
+  }
+
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f3460;
+    border-bottom: 3px solid #0f3460;
+    padding-bottom: 12px;
+    margin-bottom: 36px;
+    letter-spacing: 0.3px;
+  }
+
+  .section {
+    margin-bottom: 56px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 10px 16px;
+    background: #f0f4ff;
+    border-left: 4px solid #0f3460;
+    border-radius: 4px;
+  }
+
+  .section-num {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f3460;
+    min-width: 32px;
+  }
+
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f3460;
+    flex: 1;
+  }
+
+  .section-file {
+    font-size: 12px;
+    color: #6b7280;
+    font-family: 'Consolas', monospace;
+    background: #e5e7eb;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* ── Panel (code & terminal) ── */
+  .panel {
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    background: #ffffff;
+  }
+
+  .panel-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .terminal-label {
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+  }
+
+  .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .dot-red    { background: #ef4444; }
+  .dot-yellow { background: #f59e0b; }
+  .dot-green  { background: #22c55e; }
+
+  .panel-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-left: 6px;
+    color: #374151;
+    font-family: 'Consolas', monospace;
+  }
+
+  .terminal-label .panel-title { color: #94a3b8; }
+
+  /* ── Code panel ── */
+  .code-content {
+    margin: 0;
+    padding: 16px 20px;
+    background: #fafafa;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+    color: #1e293b;
+  }
+
+  /* Syntax colors */
+  .k  { color: #7c3aed; font-weight: 600; }  /* keywords */
+  .s  { color: #16a34a; }                     /* strings quotes */
+  .t  { color: #b45309; }                     /* template literals */
+  .c  { color: #6b7280; font-style: italic; } /* comments */
+  .n  { color: #0284c7; }                     /* numbers */
+  .f  { color: #0369a1; }                     /* function names */
+
+  /* ── Terminal panel ── */
+  .terminal-content {
+    margin: 0;
+    padding: 16px 20px;
+    background: #0f172a;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    white-space: pre;
+    color: #e2e8f0;
+  }
+
+  /* Line numbers for code */
+  .code-content code {
+    counter-reset: line;
+  }
+
+  /* Horizontal divider */
+  .divider {
+    border: none;
+    border-top: 1px dashed #cbd5e1;
+    margin: 40px 0;
+  }
+</style>
+</head>
+<body>
+<h1 class="page-title">Node.js CLI — Chương 4: Demo Scripts (Code Snippet + Terminal Output)</h1>
+
+
+  <!-- ========== DEMO 1 ========== -->
+  <div class="section" id="demo-1">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">Demo 4.1.1 — Shebang & Cấu trúc CLI</span>
+      <span class="section-file">01-demo-shebang-cli.js</span>
+    </div>
+
+    <!-- Code snippet -->
+    <div class="panel code-panel" id="code-1">
+      <div class="panel-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">📄 01-demo-shebang-cli.js</span>
+      </div>
+      <pre class="code-content"><code>#!/usr/bin/env node
+<span <span class="k">class</span>="c">// =============================================================</span>
+<span <span class="k">class</span>="c">// DEMO <span class="n">4.1</span>.<span class="n">1</span> — Shebang &amp; Cấu trúc CLI cơ bản trong Node.js</span>
+<span <span class="k">class</span>="c">// Minh họa: dòng shebang, thông tin môi trường tiến trình,</span>
+<span <span class="k">class</span>="c">//           và cách khai báo bin trong package.json</span>
+<span <span class="k">class</span>="c">// Chạy:  node <span class="n">01</span>-demo-shebang-cli.js</span>
+<span <span class="k">class</span>="c">// =============================================================</span>
+
+<span <span class="k">class</span>="c">// ── <span class="n">1</span>. Thông tin môi trường runtime ──────────────────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╔══════════════════════════════════════════════╗'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'║   Node.js CLI — Shebang &amp; Entry Point Demo   ║'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╚══════════════════════════════════════════════╝\n'</span>);
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'📌 Thông tin tiến trình Node.js:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   Node version  :'</span>, <span class="k">process</span>.version);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   Platform      :'</span>, <span class="k">process</span>.platform);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   Architecture  :'</span>, <span class="k">process</span>.arch);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   PID           :'</span>, <span class="k">process</span>.pid);
+
+<span <span class="k">class</span>="c">// ── <span class="n">2</span>. Thông tin về file thực thi ────────────────────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n📂 Đường dẫn thực thi:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   <span class="k">process</span>.execPath :'</span>, <span class="k">process</span>.execPath);
+<span <span class="k">class</span>="c">//    → Đường dẫn tới tệp nhị phân node.exe</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   <span class="k">process</span>.argv[<span class="n">1</span>]  :'</span>, <span class="k">process</span>.argv[<span class="n">1</span>]);
+<span <span class="k">class</span>="c">//    → Đường dẫn tới script JS đang chạ<span class="f">y</span>(Entry Point)</span>
+
+<span <span class="k">class</span>="c">// ── <span class="n">3</span>. Mô phỏng cấu trúc package.json → bin ──────────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n📦 Cấu trúc package.json cần khai báo để dùng shebang:'</span>);
+<span class="k">const</span> packageJsonExample = {
+  name: <span <span class="k">class</span>="s">'image-resizer-cli'</span>,
+  version: <span <span class="k">class</span>="s">'<span class="n">1.0</span>.<span class="n">0</span>'</span>,
+  bin: {
+    <span <span class="k">class</span>="s">'resize-img'</span>: <span <span class="k">class</span>="s">'./src/index.js'</span>,
+    <span <span class="k">class</span>="c">//  └─ Sau npm install -g, gõ "resize-img" sẽ gọi file này</span>
+  },
+  type: <span <span class="k">class</span>="s">'module'</span>,
+};
+<span class="k">console</span>.<span class="f">log</span>(JSON.<span class="f">stringify</span>(packageJsonExample, <span class="k">null</span>, <span class="n">2</span>));
+
+<span <span class="k">class</span>="c">// ── <span class="n">4</span>. Giải thích cơ chế shebang ──────────────────────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n🔍 Cơ chế Shebang:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   Dòng đầu file:  #!/usr/bin/env node'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   → OS đọc #! và gọi: /usr/bin/env node &lt;file&gt;'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   → env tìm "node" trong biến $PATH → thực thi'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   → Trên Windows: npm tạo file .cmd thay thế\n'</span>);
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'✅ Script thực thi thành công qua Node.js runtime!'</span>);
+</code></pre>
+    </div>
+
+    <!-- Terminal output -->
+    <div class="panel terminal-panel" id="terminal-1">
+      <div class="panel-label terminal-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">🖥️ Terminal — node 01-demo-shebang-cli.js </span>
+      </div>
+      <pre class="terminal-content"><code>╔══════════════════════════════════════════════╗
+║   Node.js CLI — Shebang &amp; Entry Point Demo   ║
+╚══════════════════════════════════════════════╝
+
+📌 Thông tin tiến trình Node.js:
+   Node version  : v24.11.1
+   Platform      : win32
+   Architecture  : x64
+   PID           : 13212
+
+📂 Đường dẫn thực thi:
+   process.execPath : C:\Program Files\nodejs\node.exe
+   process.argv[1]  : C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\demo-scripts\01-demo-shebang-cli.js
+
+📦 Cấu trúc package.json cần khai báo để dùng shebang:
+{
+  "name": "image-resizer-cli",
+  "version": "1.0.0",
+  "bin": {
+    "resize-img": "./src/index.js"
+  },
+  "type": "module"
+}
+
+🔍 Cơ chế Shebang:
+   Dòng đầu file:  #!/usr/bin/env node
+   → OS đọc #! và gọi: /usr/bin/env node &lt;file&gt;
+   → env tìm "node" trong biến $PATH → thực thi
+   → Trên Windows: npm tạo file .cmd thay thế
+
+✅ Script thực thi thành công qua Node.js runtime!</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ========== DEMO 2 ========== -->
+  <div class="section" id="demo-2">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">Demo 4.1.2 — process.argv thủ công</span>
+      <span class="section-file">02-demo-process-argv.js</span>
+    </div>
+
+    <!-- Code snippet -->
+    <div class="panel code-panel" id="code-2">
+      <div class="panel-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">📄 02-demo-process-argv.js</span>
+      </div>
+      <pre class="code-content"><code>#!/usr/bin/env node
+<span <span class="k">class</span>="c">// =============================================================</span>
+<span <span class="k">class</span>="c">// DEMO <span class="n">4.1</span>.<span class="n">2</span> (<span class="n">1</span>) — Phân tích tham số thủ công qua <span class="k">process</span>.argv</span>
+<span <span class="k">class</span>="c">// Minh họa: cấu trúc mảng <span class="k">process</span>.argv, <span class="f">slice</span>(<span class="n">2</span>),</span>
+<span <span class="k">class</span>="c">//           destructuring và vòng lặp parse flag thủ công</span>
+<span <span class="k">class</span>="c">// Chạy:  node <span class="n">02</span>-demo-<span class="k">process</span>-argv.js compress --input ./images --quality <span class="n">80</span> --verbose</span>
+<span <span class="k">class</span>="c">// =============================================================</span>
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╔══════════════════════════════════════════════╗'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'║       Demo: <span class="k">process</span>.argv — Phân tích thô     ║'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╚══════════════════════════════════════════════╝\n'</span>);
+
+<span <span class="k">class</span>="c">// ── <span class="n">1</span>. Hiển thị toàn bộ mảng <span class="k">process</span>.argv thô ────────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'📋 [<span class="k">process</span>.argv] — Mảng đầy đủ (raw):'</span>);
+<span class="k">process</span>.argv.<span class="f">forEach</span>((val, index) =&gt; {
+  <span class="k">let</span> label = <span <span class="k">class</span>="s">''</span>;
+  <span class="k">if</span> (index === <span class="n">0</span>) label = <span <span class="k">class</span>="s">'← index[<span class="n">0</span>]: đường dẫn node.exe'</span>;
+  <span class="k">if</span> (index === <span class="n">1</span>) label = <span <span class="k">class</span>="s">'← index[<span class="n">1</span>]: đường dẫn <span class="f">script</span>(Entry Point)'</span>;
+  <span class="k">if</span> (index &gt;= <span class="n">2</span>) label = <span <span class="k">class</span>="t">`← index[${index}]: tham số người dùng`</span>;
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   [${index}] "${val}"  ${label}`</span>);
+});
+
+<span <span class="k">class</span>="c">// ── <span class="n">2</span>. Cắt bỏ <span class="n">2</span> phần tử hệ thống, lấy args người dùng ───────</span>
+<span class="k">const</span> userArgs = <span class="k">process</span>.argv.<span class="f">slice</span>(<span class="n">2</span>);
+<span <span class="k">class</span>="c">//               └─ Phương pháp <span class="f">slice</span>(<span class="n">2</span>): loại bỏ node + script path</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n✂️  [<span class="k">process</span>.argv.<span class="f">slice</span>(<span class="n">2</span>)] — Tham số người dùng:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'  '</span>, userArgs);
+
+<span <span class="k">class</span>="c">// ── <span class="n">3</span>. Destructuring lấy sub-command ─────────────────────────</span>
+<span class="k">const</span> [subCommand, ...restArgs] = userArgs;
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n🎯 Sub-<span class="f">command</span>(lệnh con):'</span>, subCommand || <span <span class="k">class</span>="s">'(không có)'</span>);
+
+<span <span class="k">class</span>="c">// ── <span class="n">4</span>. Vòng lặp parse flag thủ công ──────────────────────────</span>
+<span class="k">const</span> flags = {};
+<span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; restArgs.length; i++) {
+  <span class="k">const</span> token = restArgs[i];
+  <span class="k">if</span> (token.<span class="f">startsWith</span>(<span <span class="k">class</span>="s">'--'</span>)) {
+    <span class="k">const</span> key = token.<span class="f">slice</span>(<span class="n">2</span>);           <span <span class="k">class</span>="c">// Bỏ dấu "--"</span>
+    <span class="k">const</span> nextToken = restArgs[i + <span class="n">1</span>];
+    <span class="k">if</span> (nextToken &amp;&amp; !nextToken.<span class="f">startsWith</span>(<span <span class="k">class</span>="s">'--'</span>)) {
+      <span <span class="k">class</span>="c">// Tham số có giá trị: --quality <span class="n">80</span></span>
+      flags[key] = nextToken;
+      i++; <span <span class="k">class</span>="c">// Bỏ qua token tiếp theo vì đã dùng làm giá trị</span>
+    } <span class="k">else</span> {
+      <span <span class="k">class</span>="c">// Cờ boolean: --<span class="f">verbose</span>(không có giá trị kèm theo)</span>
+      flags[key] = <span class="k">true</span>;
+    }
+  }
+}
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n🚩 Flags đã <span class="f">parse</span>(thủ công):'</span>);
+<span class="k">console</span>.<span class="f">table</span>(flags);
+
+<span <span class="k">class</span>="c">// ── <span class="n">5</span>. Vấn đề của cách parse thủ công ────────────────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'⚠️  Vấn đề với parse thủ công:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   - "--quality <span class="n">80</span>": quality nhận giá trị kiểu STRING "<span class="n">80</span>"'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   - Chưa hỗ trợ alias: -i thay cho --input'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   - Không tự sinh --help, không validate bắt buộc'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   → Giải pháp: dùng thư viện <span class="f">commander</span>(xem demo tiếp theo)\n'</span>);
+</code></pre>
+    </div>
+
+    <!-- Terminal output -->
+    <div class="panel terminal-panel" id="terminal-2">
+      <div class="panel-label terminal-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">🖥️ Terminal — node 02-demo-process-argv.js compress --input ./images --quality 80 --verbose</span>
+      </div>
+      <pre class="terminal-content"><code>╔══════════════════════════════════════════════╗
+║       Demo: process.argv — Phân tích thô     ║
+╚══════════════════════════════════════════════╝
+
+📋 [process.argv] — Mảng đầy đủ (raw):
+   [0] "C:\Program Files\nodejs\node.exe"  ← index[0]: đường dẫn node.exe
+   [1] "C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\demo-scripts\02-demo-process-argv.js"  ← index[1]: đường dẫn script (Entry Point)
+   [2] "compress"  ← index[2]: tham số người dùng
+   [3] "--input"  ← index[3]: tham số người dùng
+   [4] "./images"  ← index[4]: tham số người dùng
+   [5] "--quality"  ← index[5]: tham số người dùng
+   [6] "80"  ← index[6]: tham số người dùng
+   [7] "--verbose"  ← index[7]: tham số người dùng
+
+✂️  [process.argv.slice(2)] — Tham số người dùng:
+   [ 'compress', '--input', './images', '--quality', '80', '--verbose' ]
+
+🎯 Sub-command (lệnh con): compress
+
+🚩 Flags đã parse (thủ công):
+┌─────────┬────────────┐
+│ (index) │ Values     │
+├─────────┼────────────┤
+│ input   │ './images' │
+│ quality │ '80'       │
+│ verbose │ true       │
+└─────────┴────────────┘
+⚠️  Vấn đề với parse thủ công:
+   - "--quality 80": quality nhận giá trị kiểu STRING "80"
+   - Chưa hỗ trợ alias: -i thay cho --input
+   - Không tự sinh --help, không validate bắt buộc
+   → Giải pháp: dùng thư viện commander (xem demo tiếp theo)</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ========== DEMO 3 ========== -->
+  <div class="section" id="demo-3">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">Demo 4.1.2 — commander parse config</span>
+      <span class="section-file">03-demo-commander-config.js</span>
+    </div>
+
+    <!-- Code snippet -->
+    <div class="panel code-panel" id="code-3">
+      <div class="panel-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">📄 03-demo-commander-config.js</span>
+      </div>
+      <pre class="code-content"><code>#!/usr/bin/env node
+<span <span class="k">class</span>="c">// =============================================================</span>
+<span <span class="k">class</span>="c">// DEMO <span class="n">4.1</span>.<span class="n">2</span> (<span class="n">2</span>) — Parse cấu hình đầu vào với commander</span>
+<span <span class="k">class</span>="c">// Minh họa: Declarative API, requiredOption, alias, type coercion</span>
+<span <span class="k">class</span>="c">//           tự sinh --help, sub-command action</span>
+<span <span class="k">class</span>="c">// Chạy:  node <span class="n">03</span>-demo-commander-config.js compress -i ./images -o ./output -q <span class="n">80</span></span>
+<span <span class="k">class</span>="c">// Hoặc:  node <span class="n">03</span>-demo-commander-config.js --help</span>
+<span <span class="k">class</span>="c">// =============================================================</span>
+
+<span class="k">import</span> { Command } <span class="k">from</span> <span <span class="k">class</span>="s">'commander'</span>;
+
+<span class="k">const</span> program = <span class="k">new</span> <span class="f">Command</span>();
+
+<span <span class="k">class</span>="c">// ── <span class="n">1</span>. Metadata của CLI tool ──────────────────────────────────</span>
+program
+  .<span class="f">name</span>(<span <span class="k">class</span>="s">'resize-img'</span>)
+  .<span class="f">description</span>(<span <span class="k">class</span>="s">'Batch Image Resizer — CLI <span class="f">Tool</span>(Node.js Core Demo)'</span>)
+  .<span class="f">version</span>(<span <span class="k">class</span>="s">'<span class="n">1.0</span>.<span class="n">0</span>'</span>, <span <span class="k">class</span>="s">'-v, --version'</span>, <span <span class="k">class</span>="s">'Hiển thị phiên bản'</span>);
+
+<span <span class="k">class</span>="c">// ── <span class="n">2</span>. Định nghĩa sub-command "compress" ─────────────────────</span>
+program
+  .<span class="f">command</span>(<span <span class="k">class</span>="s">'compress'</span>)
+  .<span class="f">description</span>(<span <span class="k">class</span>="s">'Nén và resize hình ảnh hàng loạt trong thư mục'</span>)
+  <span <span class="k">class</span>="c">// requiredOption: bắt buộc, ném lỗi nếu người dùng bỏ qua</span>
+  .<span class="f">requiredOption</span>(
+    <span <span class="k">class</span>="s">'-i, --input &lt;directory&gt;'</span>,
+    <span <span class="k">class</span>="s">'Đường dẫn thư mục chứa ảnh gố<span class="f">c</span>(bắt buộc)'</span>
+  )
+  <span <span class="k">class</span>="c">// Option có giá trị mặc định</span>
+  .<span class="f">option</span>(
+    <span <span class="k">class</span>="s">'-o, --output &lt;directory&gt;'</span>,
+    <span <span class="k">class</span>="s">'Đường dẫn thư mục lưu ảnh đã nén'</span>,
+    <span <span class="k">class</span>="s">'./output'</span>
+  )
+  <span <span class="k">class</span>="c">// Option với ép kiểu: chuỗi "<span class="n">80</span>" → số <span class="n">80</span> qua hàm parseInt</span>
+  .<span class="f">option</span>(
+    <span <span class="k">class</span>="s">'-q, --quality &lt;number&gt;'</span>,
+    <span <span class="k">class</span>="s">'Chất lượng <span class="f">JPEG</span>(<span class="n">1</span>–<span class="n">100</span>)'</span>,
+    (val) =&gt; {
+      <span class="k">const</span> num = <span class="f">parseInt</span>(val, <span class="n">10</span>);
+      <span class="k">if</span> (<span class="f">isNaN</span>(num) || num &lt; <span class="n">1</span> || num &gt; <span class="n">100</span>)
+        <span class="k">throw</span> <span class="k">new</span> <span class="f">Error</span>(<span <span class="k">class</span>="s">'Quality phải là số nguyên từ <span class="n">1</span> đến <span class="n">100</span>'</span>);
+      <span class="k">return</span> num;
+    },
+    <span class="n">80</span>  <span <span class="k">class</span>="c">// Giá trị mặc định</span>
+  )
+  <span <span class="k">class</span>="c">// Option với alias -W / --width</span>
+  .<span class="f">option</span>(<span <span class="k">class</span>="s">'-W, --width &lt;pixels&gt;'</span>, <span <span class="k">class</span>="s">'Chiều rộng đí<span class="f">ch</span>(pixels)'</span>, parseInt)
+  .<span class="f">option</span>(<span <span class="k">class</span>="s">'-H, --height &lt;pixels&gt;'</span>, <span <span class="k">class</span>="s">'Chiều cao đí<span class="f">ch</span>(pixels)'</span>, parseInt)
+  <span <span class="k">class</span>="c">// Cờ boolean</span>
+  .<span class="f">option</span>(<span <span class="k">class</span>="s">'--verbose'</span>, <span <span class="k">class</span>="s">'Hiển thị log chi tiết từng file'</span>, <span class="k">false</span>)
+  <span <span class="k">class</span>="c">// Action: hàm được gọi khi sub-command khớp</span>
+  .<span class="f">action</span>((options) =&gt; {
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╔══════════════════════════════════════════════╗'</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'║     Demo: commander — Configuration Object   ║'</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╚══════════════════════════════════════════════╝\n'</span>);
+
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'✅ Configuration Object đã <span class="f">parse</span>(commander):'</span>);
+    <span class="k">console</span>.<span class="f">log</span>({
+      input:   options.input,
+      output:  options.output,
+      quality: options.quality,   <span <span class="k">class</span>="c">// ← Đã là NUMBER, không phải string</span>
+      width:   options.width  || <span class="k">null</span>,
+      height:  options.height || <span class="k">null</span>,
+      verbose: options.verbose,
+    });
+
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n📌 So sánh với parse thủ công:'</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   <span class="f">quality</span>(commander) :'</span>, typeof options.quality, <span <span class="k">class</span>="s">'→'</span>, options.quality);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   → Ép kiểu tự động! Không cần parseInt thủ công\n'</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   Alias hoạt động: -i ↔ --input | -o ↔ --output | -q ↔ --quality'</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   Thử: node <span class="n">03</span>-demo-commander-config.js --help\n'</span>);
+  });
+
+<span <span class="k">class</span>="c">// ── <span class="n">3</span>. Kích hoạt parser ───────────────────────────────────────</span>
+program.<span class="f">parse</span>(<span class="k">process</span>.argv);
+</code></pre>
+    </div>
+
+    <!-- Terminal output -->
+    <div class="panel terminal-panel" id="terminal-3">
+      <div class="panel-label terminal-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">🖥️ Terminal — node 03-demo-commander-config.js compress -i ./images -o ./output -q 80 --verbose</span>
+      </div>
+      <pre class="terminal-content"><code>╔══════════════════════════════════════════════╗
+║     Demo: commander — Configuration Object   ║
+╚══════════════════════════════════════════════╝
+
+✅ Configuration Object đã parse (commander):
+{
+  input: './images',
+  output: './output',
+  quality: 80,
+  width: null,
+  height: null,
+  verbose: true
+}
+
+📌 So sánh với parse thủ công:
+   quality (commander) : number → 80
+   → Ép kiểu tự động! Không cần parseInt thủ công
+
+   Alias hoạt động: -i ↔ --input | -o ↔ --output | -q ↔ --quality
+   Thử: node 03-demo-commander-config.js --help</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ========== DEMO 4 ========== -->
+  <div class="section" id="demo-4">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">Demo 4.1.3 — Terminal UX</span>
+      <span class="section-file">04-demo-terminal-ux.js</span>
+    </div>
+
+    <!-- Code snippet -->
+    <div class="panel code-panel" id="code-4">
+      <div class="panel-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">📄 04-demo-terminal-ux.js</span>
+      </div>
+      <pre class="code-content"><code>#!/usr/bin/env node
+<span <span class="k">class</span>="c">// =============================================================</span>
+<span <span class="k">class</span>="c">// DEMO <span class="n">4.1</span>.<span class="n">3</span> — Terminal UX: ora + cli-progress + chalk + inquirer</span>
+<span <span class="k">class</span>="c">// Minh họa: spinner không xác định, progress bar có thể đo,</span>
+<span <span class="k">class</span>="c">//           màu sắc ngữ nghĩa, menu tương tác inquirer</span>
+<span <span class="k">class</span>="c">// Chạy:  node <span class="n">04</span>-demo-terminal-ux.<span class="f">js</span>(tự động, không cần nhập)</span>
+<span <span class="k">class</span>="c">// Chạy:  node <span class="n">04</span>-demo-terminal-ux.js --<span class="f">interactive</span>(bật menu inquirer thật)</span>
+<span <span class="k">class</span>="c">// =============================================================</span>
+
+<span class="k">import</span> chalk       <span class="k">from</span> <span <span class="k">class</span>="s">'chalk'</span>;
+<span class="k">import</span> ora         <span class="k">from</span> <span <span class="k">class</span>="s">'ora'</span>;
+<span class="k">import</span> cliProgress <span class="k">from</span> <span <span class="k">class</span>="s">'cli-progress'</span>;
+<span class="k">import</span> inquirer    <span class="k">from</span> <span <span class="k">class</span>="s">'inquirer'</span>;
+
+<span <span class="k">class</span>="c">// ── Hàm tiện ích: dừng N mili-giâ<span class="f">y</span>(giả lập tác vụ) ─────────</span>
+<span class="k">const</span> sleep = (ms) =&gt; <span class="k">new</span> <span class="f">Promise</span>((res) =&gt; <span class="f">setTimeout</span>(res, ms));
+<span class="k">const</span> isInteractive = <span class="k">process</span>.argv.<span class="f">includes</span>(<span <span class="k">class</span>="s">'--interactive'</span>);
+
+<span class="k">console</span>.<span class="f">log</span>(chalk.bold.<span class="f">cyan</span>(<span <span class="k">class</span>="s">'\n╔══════════════════════════════════════════╗'</span>));
+<span class="k">console</span>.<span class="f">log</span>(chalk.bold.<span class="f">cyan</span>(<span <span class="k">class</span>="s">'║   Demo: Terminal UX — Chương <span class="n">4.1</span>.<span class="n">3</span>       ║'</span>));
+<span class="k">console</span>.<span class="f">log</span>(chalk.bold.<span class="f">cyan</span>(<span <span class="k">class</span>="s">'╚══════════════════════════════════════════╝\n'</span>));
+
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span <span class="k">class</span>="c">// BƯỚC <span class="n">1</span>: inquirer — Menu tương tá<span class="f">c</span>(Wizard Mode)</span>
+<span <span class="k">class</span>="c">//   Pull Mode: hệ thống CHỦ ĐỘNG hỏi thay vì người dùng phải nhớ flags</span>
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span class="k">let</span> answers;
+<span class="k">if</span> (isInteractive) {
+  <span <span class="k">class</span>="c">// Chế độ thật: hiển thị menu inquirer, người dùng chọn bằng phím mũi tên</span>
+  answers = <span class="k">await</span> inquirer.<span class="f">prompt</span>([
+    {
+      type: <span <span class="k">class</span>="s">'list'</span>,
+      name: <span <span class="k">class</span>="s">'format'</span>,
+      message: <span <span class="k">class</span>="s">'Chọn định dạng ảnh đầu ra:'</span>,
+      choices: [<span <span class="k">class</span>="s">'jpeg'</span>, <span <span class="k">class</span>="s">'png'</span>, <span <span class="k">class</span>="s">'webp'</span>, <span <span class="k">class</span>="s">'avif'</span>],
+      default: <span <span class="k">class</span>="s">'jpeg'</span>,
+    },
+    {
+      type: <span <span class="k">class</span>="s">'number'</span>,
+      name: <span <span class="k">class</span>="s">'quality'</span>,
+      message: <span <span class="k">class</span>="s">'Nhập chất lượng né<span class="f">n</span>(<span class="n">1</span>–<span class="n">100</span>):'</span>,
+      default: <span class="n">80</span>,
+      validate: (val) =&gt; (val &gt;= <span class="n">1</span> &amp;&amp; val &lt;= <span class="n">100</span>) || <span <span class="k">class</span>="s">'Phải từ <span class="n">1</span> đến <span class="n">100</span>'</span>,
+    },
+    {
+      type: <span <span class="k">class</span>="s">'confirm'</span>,
+      name: <span <span class="k">class</span>="s">'verbose'</span>,
+      message: <span <span class="k">class</span>="s">'Bật chế độ <span class="f">verbose</span>(log chi tiết)?'</span>,
+      default: <span class="k">false</span>,
+    },
+  ]);
+  <span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">green</span>(<span <span class="k">class</span>="s">'\n✔ Cấu hình từ inquirer:'</span>), answers);
+} <span class="k">else</span> {
+  <span <span class="k">class</span>="c">// Chế độ demo tự động: giả lập kết quả inquirer</span>
+  answers = { format: <span <span class="k">class</span>="s">'jpeg'</span>, quality: <span class="n">80</span>, verbose: <span class="k">false</span> };
+  <span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">bold</span>(<span <span class="k">class</span>="s">'── BƯỚC <span class="n">1</span>: <span class="f">inquirer</span>(Wizard Mode) ──'</span>));
+  <span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">blue</span>(<span <span class="k">class</span>="s">'   ? Chọn định dạng ảnh đầu ra:'</span>));
+  <span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">cyan</span>(<span <span class="k">class</span>="s">'   ❯ jpeg'</span>) + <span <span class="k">class</span>="s">'  png  webp  avif'</span>);
+  <span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">blue</span>(<span <span class="k">class</span>="s">'\n   ? Nhập chất lượng né<span class="f">n</span>(<span class="n">1</span>–<span class="n">100</span>):'</span>));
+  <span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">cyan</span>(<span <span class="k">class</span>="s">'   ❯ <span class="n">80</span>'</span>));
+  <span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">blue</span>(<span <span class="k">class</span>="s">'\n   ? Bật chế độ verbose?'</span>));
+  <span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">cyan</span>(<span <span class="k">class</span>="s">'   ❯ Không\n'</span>));
+  <span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">green</span>(<span <span class="k">class</span>="s">'   ✔ Cấu hình đã nhận:'</span>), answers);
+  <span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">gray</span>(<span <span class="k">class</span>="s">'   → Thêm --interactive để dùng menu thật\n'</span>));
+}
+
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span <span class="k">class</span>="c">// BƯỚC <span class="n">2</span>: ora spinner — Tác vụ không đo được thời gian</span>
+<span <span class="k">class</span>="c">//   Unknown Duration: hiển thị spinner quay để báo "còn sống"</span>
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">bold</span>(<span <span class="k">class</span>="s">'── BƯỚC <span class="n">2</span>: ora <span class="f">Spinner</span>(Unknown Duration) ──'</span>));
+<span class="k">const</span> spinner = <span class="f">ora</span>({
+  text: chalk.<span class="f">blue</span>(<span <span class="k">class</span>="s">'Đang quét thư mục và thu thập danh sách ảnh...'</span>),
+  color: <span <span class="k">class</span>="s">'cyan'</span>,
+}).<span class="f">start</span>();
+
+<span class="k">await</span> <span class="f">sleep</span>(<span class="n">1500</span>);
+spinner.<span class="f">succeed</span>(chalk.<span class="f">green</span>(<span <span class="k">class</span>="s">'Tìm thấy <span class="n">12</span> file ảnh hợp lệ!'</span>));
+
+<span class="k">const</span> spinner2 = <span class="f">ora</span>({
+  text: chalk.<span class="f">blue</span>(<span <span class="k">class</span>="s">'Khởi tạo Worker Thread Pool...'</span>),
+  color: <span <span class="k">class</span>="s">'yellow'</span>,
+}).<span class="f">start</span>();
+<span class="k">await</span> <span class="f">sleep</span>(<span class="n">1000</span>);
+spinner2.<span class="f">succeed</span>(chalk.<span class="f">green</span>(<span <span class="k">class</span>="s">'Worker Pool sẵn sà<span class="f">ng</span>(<span class="n">4</span> luồng song song)\n'</span>));
+
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span <span class="k">class</span>="c">// BƯỚC <span class="n">3</span>: cli-progress — Thanh tiến trình có thể đo</span>
+<span <span class="k">class</span>="c">//   Determinable Duration: biết tổng số công việc → hiện % + ETA</span>
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">bold</span>(<span <span class="k">class</span>="s">'── BƯỚC <span class="n">3</span>: cli-progress <span class="f">Bar</span>(Determinable Duration) ──'</span>));
+<span class="k">const</span> totalImages = <span class="n">12</span>;
+<span class="k">const</span> progressBar = <span class="k">new</span> cliProgress.<span class="f">SingleBar</span>({
+  format: chalk.<span class="f">cyan</span>(<span <span class="k">class</span>="s">'  Nén ảnh'</span>) + <span <span class="k">class</span>="s">' |'</span> + chalk.<span class="f">cyan</span>(<span <span class="k">class</span>="s">'{bar}'</span>) +
+          <span <span class="k">class</span>="s">'| {percentage}% || {value}/{total} file || ETA: {eta}s'</span>,
+  barCompleteChar: <span <span class="k">class</span>="s">'█'</span>,
+  barIncompleteChar: <span <span class="k">class</span>="s">'░'</span>,
+  hideCursor: <span class="k">false</span>,
+}, cliProgress.Presets.shades_classic);
+
+progressBar.<span class="f">start</span>(totalImages, <span class="n">0</span>);
+<span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; totalImages; i++) {
+  <span class="k">await</span> <span class="f">sleep</span>(<span class="n">200</span>);
+  progressBar.<span class="f">increment</span>();
+}
+
+progressBar.<span class="f">stop</span>();
+
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span <span class="k">class</span>="c">// BƯỚC <span class="n">4</span>: chalk — Màu sắc ngữ nghĩa trong kết quả log</span>
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n'</span> + chalk.<span class="f">bold</span>(<span <span class="k">class</span>="s">'📊 Kết quả xử lý:'</span>));
+<span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">green</span>(<span <span class="k">class</span>="s">'  ✔ photo_001.jpg → output/photo_001.<span class="f">jpeg</span>(98KB → 42KB)'</span>));
+<span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">green</span>(<span <span class="k">class</span>="s">'  ✔ photo_002.jpg → output/photo_002.<span class="f">jpeg</span>(120KB → 55KB)'</span>));
+<span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">yellow</span>(<span <span class="k">class</span>="s">'  ⚠ icon.png      → BỎ <span class="f">QUA</span>(file PNG &lt; 10KB, không cần nén)'</span>));
+<span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">red</span>(<span <span class="k">class</span>="s">'  ✖ banner.png    → LỖI: Không đủ quyền ghi vào thư mục output'</span>));
+<span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">green</span>(<span <span class="k">class</span>="s">'  ✔ hero_image.jpeg → output/hero_image.<span class="f">jpeg</span>(<span class="n">2.</span>1MB → 340KB)'</span>));
+<span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">green</span>(<span <span class="k">class</span>="s">'  ✔ ... (<span class="n">8</span> file còn lại thành công)\n'</span>));
+
+<span class="k">console</span>.<span class="f">log</span>(chalk.bold.<span class="f">green</span>(<span <span class="k">class</span>="s">'✅ Hoàn tất! <span class="n">10</span> ảnh nén thành công | <span class="n">1</span> cảnh báo | <span class="n">1</span> lỗi'</span>));
+<span class="k">console</span>.<span class="f">log</span>(chalk.<span class="f">gray</span>(<span <span class="k">class</span>="s">'   Thời gian xử lý: <span class="n">3.</span>2s | Dung lượng tiết kiệm: <span class="n">4.</span>8MB\n'</span>));
+</code></pre>
+    </div>
+
+    <!-- Terminal output -->
+    <div class="panel terminal-panel" id="terminal-4">
+      <div class="panel-label terminal-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">🖥️ Terminal — node 04-demo-terminal-ux.js </span>
+      </div>
+      <pre class="terminal-content"><code>╔══════════════════════════════════════════╗
+║   Demo: Terminal UX — Chương 4.1.3       ║
+╚══════════════════════════════════════════╝
+
+── BƯỚC 1: inquirer (Wizard Mode) ──
+   ? Chọn định dạng ảnh đầu ra:
+   ❯ jpeg  png  webp  avif
+
+   ? Nhập chất lượng nén (1–100):
+   ❯ 80
+
+   ? Bật chế độ verbose?
+   ❯ Không
+
+   ✔ Cấu hình đã nhận: { format: 'jpeg', quality: 80, verbose: false }
+   → Thêm --interactive để dùng menu thật
+
+── BƯỚC 2: ora Spinner (Unknown Duration) ──
+── BƯỚC 3: cli-progress Bar (Determinable Duration) ──
+
+📊 Kết quả xử lý:
+  ✔ photo_001.jpg → output/photo_001.jpeg (98KB → 42KB)
+  ✔ photo_002.jpg → output/photo_002.jpeg (120KB → 55KB)
+  ⚠ icon.png      → BỎ QUA (file PNG &lt; 10KB, không cần nén)
+  ✖ banner.png    → LỖI: Không đủ quyền ghi vào thư mục output
+  ✔ hero_image.jpeg → output/hero_image.jpeg (2.1MB → 340KB)
+  ✔ ... (8 file còn lại thành công)
+
+✅ Hoàn tất! 10 ảnh nén thành công | 1 cảnh báo | 1 lỗi
+   Thời gian xử lý: 3.2s | Dung lượng tiết kiệm: 4.8MB</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ========== DEMO 5 ========== -->
+  <div class="section" id="demo-5">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <span class="section-title">Demo 4.2.1 — Blocking vs Non-blocking</span>
+      <span class="section-file">05-demo-blocking-vs-nonblocking.js</span>
+    </div>
+
+    <!-- Code snippet -->
+    <div class="panel code-panel" id="code-5">
+      <div class="panel-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">📄 05-demo-blocking-vs-nonblocking.js</span>
+      </div>
+      <pre class="code-content"><code>#!/usr/bin/env node
+<span <span class="k">class</span>="c">// =============================================================</span>
+<span <span class="k">class</span>="c">// DEMO <span class="n">4.2</span>.<span class="n">1</span> — So sánh Blocking vs Non-blocking I/O</span>
+<span <span class="k">class</span>="c">// Minh họa: fs.<span class="f">readFileSync</span>(chặn luồng) vs fs.promises.readFile</span>
+<span <span class="k">class</span>="c">//           + Promise.<span class="f">all</span>(song song). Đo thời gian chênh lệch.</span>
+<span <span class="k">class</span>="c">// Chạy:  node <span class="n">05</span>-demo-blocking-vs-nonblocking.js</span>
+<span <span class="k">class</span>="c">// =============================================================</span>
+
+<span class="k">import</span> fs   <span class="k">from</span> <span <span class="k">class</span>="s">'fs'</span>;
+<span class="k">import</span> path <span class="k">from</span> <span <span class="k">class</span>="s">'path'</span>;
+<span class="k">import</span> { fileURLToPath } <span class="k">from</span> <span <span class="k">class</span>="s">'url'</span>;
+
+<span class="k">const</span> __dirname = path.<span class="f">dirname</span>(<span class="f">fileURLToPath</span>(<span class="k">import</span>.meta.url));
+
+<span <span class="k">class</span>="c">// ── Tạo <span class="n">5</span> file giả lập dữ liệu ảnh lớn ──────────────────────</span>
+<span class="k">const</span> TEMP_DIR  = path.<span class="f">join</span>(__dirname, <span <span class="k">class</span>="s">'_temp_demo'</span>);
+<span class="k">const</span> NUM_FILES = <span class="n">5</span>;
+<span class="k">const</span> FILE_SIZE_KB = <span class="n">500</span>; <span <span class="k">class</span>="c">// Mỗi file ~500KB</span>
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╔═══════════════════════════════════════════════════════╗'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'║   Demo: Blocking vs Non-blocking I/O — Chương <span class="n">4.2</span>.<span class="n">1</span>  ║'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╚═══════════════════════════════════════════════════════╝\n'</span>);
+
+<span <span class="k">class</span>="c">// Chuẩn bị: tạo thư mục và file test tạm thời</span>
+fs.<span class="f">mkdirSync</span>(TEMP_DIR, { recursive: <span class="k">true</span> });
+<span class="k">const</span> filePaths = [];
+<span class="k">for</span> (<span class="k">let</span> i = <span class="n">1</span>; i &lt;= NUM_FILES; i++) {
+  <span class="k">const</span> fp = path.<span class="f">join</span>(TEMP_DIR, <span <span class="k">class</span>="t">`test_image_${i}.dat`</span>);
+  <span class="k">if</span> (!fs.<span class="f">existsSync</span>(fp)) {
+    <span <span class="k">class</span>="c">// Ghi dữ liệu ngẫu nhiên ~500KB để giả lập file ảnh</span>
+    fs.<span class="f">writeFileSync</span>(fp, Buffer.<span class="f">alloc</span>(FILE_SIZE_KB * <span class="n">1024</span>, i));
+  }
+  filePaths.<span class="f">push</span>(fp);
+}
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`📁 Đã tạo ${NUM_FILES} file giả lậ<span class="f">p</span>(~${FILE_SIZE_KB}KB mỗi file)\n`</span>);
+
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span <span class="k">class</span>="c">// MÔ HÌNH <span class="n">1</span>: BLOCKING — fs.<span class="f">readFileSync</span>(đồng bộ)</span>
+<span <span class="k">class</span>="c">//   CPU dừng chờ từng file xong mới đọc file tiếp theo</span>
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'─── MÔ HÌNH <span class="n">1</span>: <span class="f">Blocking</span>(fs.readFileSync) ───'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   → Đọc tuần tự, luồng JS bị CHẶN sau mỗi file\n'</span>);
+
+<span class="k">const</span> t1Start = performance.<span class="f">now</span>();
+
+<span class="k">for</span> (<span class="k">const</span> fp <span class="k">of</span> filePaths) {
+  <span class="k">const</span> data = fs.<span class="f">readFileSync</span>(fp); <span <span class="k">class</span>="c">// ← CHẶN luồng tại đây</span>
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   📖 Đọc xong: ${path.<span class="f">basename</span>(fp)} (${(data.length / <span class="n">1024</span>).<span class="f">toFixed</span>(<span class="n">0</span>)} KB)`</span>);
+}
+
+<span class="k">const</span> t1End     = performance.<span class="f">now</span>();
+<span class="k">const</span> blocking  = (t1End - t1Start).<span class="f">toFixed</span>(<span class="n">2</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`\n   ⏱ Tổng thời gian BLOCKING  : ${blocking} ms\n`</span>);
+
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span <span class="k">class</span>="c">// MÔ HÌNH <span class="n">2</span>: NON-BLOCKING — fs.promises.readFile + Promise.all</span>
+<span <span class="k">class</span>="c">//   Tất cả <span class="n">5</span> yêu cầu đọc được gửi CÙNG LÚC, Libuv xử lý song song</span>
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'─── MÔ HÌNH <span class="n">2</span>: Non-<span class="f">blocking</span>(fs.promises + Promise.all) ───'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   → Gửi TẤT CẢ yêu cầu đọc cùng lúc, không chặn luồng JS\n'</span>);
+
+<span class="k">const</span> t2Start = performance.<span class="f">now</span>();
+
+<span <span class="k">class</span>="c">// Tạo mảng Promise — tất cả I/O khởi động ĐỒNG THỜI</span>
+<span class="k">const</span> readPromises = filePaths.<span class="f">map</span>((fp) =&gt;
+  fs.promises.<span class="f">readFile</span>(fp).<span class="f">then</span>((data) =&gt; {
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   📖 Đọc xong: ${path.<span class="f">basename</span>(fp)} (${(data.length / <span class="n">1024</span>).<span class="f">toFixed</span>(<span class="n">0</span>)} KB)`</span>);
+    <span class="k">return</span> data;
+  })
+);
+
+<span class="k">await</span> Promise.<span class="f">all</span>(readPromises); <span <span class="k">class</span>="c">// Chờ TẤT CẢ hoàn thành</span>
+
+<span class="k">const</span> t2End        = performance.<span class="f">now</span>();
+<span class="k">const</span> nonBlocking  = (t2End - t2Start).<span class="f">toFixed</span>(<span class="n">2</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`\n   ⏱ Tổng thời gian NON-BLOCKING: ${nonBlocking} ms`</span>);
+
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span <span class="k">class</span>="c">// KẾT QUẢ SO SÁNH</span>
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span class="k">const</span> speedup = (<span class="f">parseFloat</span>(blocking) / <span class="f">parseFloat</span>(nonBlocking)).<span class="f">toFixed</span>(<span class="n">2</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n══════════════════════════════════════════════'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'📊 KẾT QUẢ SO SÁNH:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Blocking     : ${blocking} <span class="f">ms</span>(tuần tự, <span class="n">1</span> luồng, CPU chờ từng file)`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Non-blocking : ${nonBlocking} <span class="f">ms</span>(song song, Libuv Thread Pool)`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   🚀 Non-blocking nhanh hơn ~${speedup}x với ${NUM_FILES} file`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   → Khi xử lý <span class="n">1000</span> ảnh: tiết kiệm vài phút thực thi!\n`</span>);
+
+<span <span class="k">class</span>="c">// Dọn dẹp file tạm</span>
+fs.<span class="f">rmSync</span>(TEMP_DIR, { recursive: <span class="k">true</span>, force: <span class="k">true</span> });
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'🧹 Đã xóa file tạm. Demo hoàn tất.\n'</span>);
+</code></pre>
+    </div>
+
+    <!-- Terminal output -->
+    <div class="panel terminal-panel" id="terminal-5">
+      <div class="panel-label terminal-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">🖥️ Terminal — node 05-demo-blocking-vs-nonblocking.js </span>
+      </div>
+      <pre class="terminal-content"><code>╔═══════════════════════════════════════════════════════╗
+║   Demo: Blocking vs Non-blocking I/O — Chương 4.2.1  ║
+╚═══════════════════════════════════════════════════════╝
+
+📁 Đã tạo 5 file giả lập (~500KB mỗi file)
+
+─── MÔ HÌNH 1: Blocking (fs.readFileSync) ───
+   → Đọc tuần tự, luồng JS bị CHẶN sau mỗi file
+
+   📖 Đọc xong: test_image_1.dat (500 KB)
+   📖 Đọc xong: test_image_2.dat (500 KB)
+   📖 Đọc xong: test_image_3.dat (500 KB)
+   📖 Đọc xong: test_image_4.dat (500 KB)
+   📖 Đọc xong: test_image_5.dat (500 KB)
+
+   ⏱ Tổng thời gian BLOCKING  : 5.55 ms
+
+─── MÔ HÌNH 2: Non-blocking (fs.promises + Promise.all) ───
+   → Gửi TẤT CẢ yêu cầu đọc cùng lúc, không chặn luồng JS
+
+   📖 Đọc xong: test_image_1.dat (500 KB)
+   📖 Đọc xong: test_image_3.dat (500 KB)
+   📖 Đọc xong: test_image_4.dat (500 KB)
+   📖 Đọc xong: test_image_2.dat (500 KB)
+   📖 Đọc xong: test_image_5.dat (500 KB)
+
+   ⏱ Tổng thời gian NON-BLOCKING: 10.24 ms
+
+══════════════════════════════════════════════
+📊 KẾT QUẢ SO SÁNH:
+   Blocking     : 5.55 ms (tuần tự, 1 luồng, CPU chờ từng file)
+   Non-blocking : 10.24 ms (song song, Libuv Thread Pool)
+   🚀 Non-blocking nhanh hơn ~0.54x với 5 file
+   → Khi xử lý 1000 ảnh: tiết kiệm vài phút thực thi!
+
+🧹 Đã xóa file tạm. Demo hoàn tất.</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ========== DEMO 6 ========== -->
+  <div class="section" id="demo-6">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <span class="section-title">Demo 4.2.2 — UV_THREADPOOL_SIZE</span>
+      <span class="section-file">06-demo-threadpool.js</span>
+    </div>
+
+    <!-- Code snippet -->
+    <div class="panel code-panel" id="code-6">
+      <div class="panel-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">📄 06-demo-threadpool.js</span>
+      </div>
+      <pre class="code-content"><code>#!/usr/bin/env node
+<span <span class="k">class</span>="c">// =============================================================</span>
+<span <span class="k">class</span>="c">// DEMO <span class="n">4.2</span>.<span class="n">2</span> — UV_THREADPOOL_SIZE &amp; Libuv Thread Pool</span>
+<span <span class="k">class</span>="c">// Minh họa: cấu hình thread pool theo số lõi CPU,</span>
+<span <span class="k">class</span>="c">//           chạy nhiều tác vụ fs song song để quan sát hiệu quả</span>
+<span <span class="k">class</span>="c">// Chạy:  node <span class="n">06</span>-demo-threadpool.js</span>
+<span <span class="k">class</span>="c">// =============================================================</span>
+
+<span class="k">import</span> os   <span class="k">from</span> <span <span class="k">class</span>="s">'os'</span>;
+<span class="k">import</span> fs   <span class="k">from</span> <span <span class="k">class</span>="s">'fs'</span>;
+<span class="k">import</span> path <span class="k">from</span> <span <span class="k">class</span>="s">'path'</span>;
+<span class="k">import</span> { fileURLToPath } <span class="k">from</span> <span <span class="k">class</span>="s">'url'</span>;
+<span class="k">import</span> { performance }   <span class="k">from</span> <span <span class="k">class</span>="s">'perf_hooks'</span>;
+
+<span class="k">const</span> __dirname = path.<span class="f">dirname</span>(<span class="f">fileURLToPath</span>(<span class="k">import</span>.meta.url));
+
+<span <span class="k">class</span>="c">// ── BƯỚC <span class="n">1</span>: Cấu hình UV_THREADPOOL_SIZE ──────────────────────</span>
+<span <span class="k">class</span>="c">//   MẶC ĐỊNH Libuv chỉ có <span class="n">4</span> luồng nề<span class="f">n</span>(rất bảo thủ)</span>
+<span <span class="k">class</span>="c">//   → Cần thiết lập TRƯỚC KHI require/<span class="k">import</span> bất kỳ module fs nào</span>
+
+<span class="k">const</span> cpuCount = os.<span class="f">cpus</span>().length;
+<span class="k">process</span>.env.UV_THREADPOOL_SIZE = <span class="f">String</span>(cpuCount);
+<span <span class="k">class</span>="c">//           └─ Mở rộng thread pool bằng số lõi logic CPU thực tế</span>
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╔════════════════════════════════════════════════════════╗'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'║   Demo: UV_THREADPOOL_SIZE &amp; Libuv Thread Pool <span class="n">4.2</span>.<span class="n">2</span>  ║'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╚════════════════════════════════════════════════════════╝\n'</span>);
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'🖥️  Thông tin hệ thống:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   CPU model   : ${os.<span class="f">cpus</span>()[<span class="n">0</span>].model}`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Lõi logic   : ${cpuCount} lõi`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   UV_THREADPOOL_SIZE mặc định : <span class="n">4</span>`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   UV_THREADPOOL_SIZE đã thiết lập: ${<span class="k">process</span>.env.UV_THREADPOOL_SIZE}`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   → Thread Pool mở rộng từ <span class="n">4</span> → ${cpuCount} luồng nền\n`</span>);
+
+<span <span class="k">class</span>="c">// ── BƯỚC <span class="n">2</span>: Chuẩn bị file test ───────────────────────────────</span>
+<span class="k">const</span> TEMP_DIR   = path.<span class="f">join</span>(__dirname, <span <span class="k">class</span>="s">'_temp_threadpool'</span>);
+<span class="k">const</span> BATCH_SIZE = cpuCount * <span class="n">2</span>; <span <span class="k">class</span>="c">// Gửi gấp đôi số lõi để thấy rõ hiệu quả</span>
+<span class="k">const</span> FILE_KB    = <span class="n">300</span>;
+
+fs.<span class="f">mkdirSync</span>(TEMP_DIR, { recursive: <span class="k">true</span> });
+<span class="k">const</span> filePaths = [];
+<span class="k">for</span> (<span class="k">let</span> i = <span class="n">1</span>; i &lt;= BATCH_SIZE; i++) {
+  <span class="k">const</span> fp = path.<span class="f">join</span>(TEMP_DIR, <span <span class="k">class</span>="t">`img_batch_${<span class="f">String</span>(i).<span class="f">padStart</span>(<span class="n">3</span>, <span <span class="k">class</span>="s">'<span class="n">0</span>'</span>)}.dat`</span>);
+  fs.<span class="f">writeFileSync</span>(fp, Buffer.<span class="f">alloc</span>(FILE_KB * <span class="n">1024</span>, i % <span class="n">256</span>));
+  filePaths.<span class="f">push</span>(fp);
+}
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`📁 Đã tạo ${BATCH_SIZE} file <span class="f">test</span>(~${FILE_KB}KB mỗi file)\n`</span>);
+
+<span <span class="k">class</span>="c">// ── BƯỚC <span class="n">3</span>: Gửi TẤT CẢ yêu cầu đọc đồng thời ────────────────</span>
+<span <span class="k">class</span>="c">//   Libuv sẽ phân phối công việc vào Thread Pool</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`⚡ Gửi ${BATCH_SIZE} yêu cầu đọc file đồng thời...`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Libuv thread pool xử lý song <span class="f">song</span>(tối đa ${cpuCount} luồng cùng lúc)\n`</span>);
+
+<span class="k">const</span> startTime = performance.<span class="f">now</span>();
+
+<span <span class="k">class</span>="c">// Tạo và chạy tất cả Promise song song</span>
+<span class="k">const</span> results = <span class="k">await</span> Promise.<span class="f">all</span>(
+  filePaths.<span class="f">map</span>(<span class="k">async</span> (fp, idx) =&gt; {
+    <span class="k">const</span> t0   = performance.<span class="f">now</span>();
+    <span class="k">const</span> data  = <span class="k">await</span> fs.promises.<span class="f">readFile</span>(fp);
+    <span class="k">const</span> elapsed = (performance.<span class="f">now</span>() - t0).<span class="f">toFixed</span>(<span class="n">1</span>);
+    <span class="k">return</span> { idx: idx + <span class="n">1</span>, name: path.<span class="f">basename</span>(fp), kb: data.length / <span class="n">1024</span>, elapsed };
+  })
+);
+
+<span class="k">const</span> totalTime = (performance.<span class="f">now</span>() - startTime).<span class="f">toFixed</span>(<span class="n">2</span>);
+
+<span <span class="k">class</span>="c">// ── BƯỚC <span class="n">4</span>: Hiển thị kết quả ─────────────────────────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'📊 Kết quả từng file:'</span>);
+results.<span class="f">forEach</span>(({ idx, name, kb, elapsed }) =&gt; {
+  <span class="k">console</span>.<span class="f">log</span>(
+    <span <span class="k">class</span>="t">`   [${<span class="f">String</span>(idx).<span class="f">padStart</span>(<span class="n">2</span>, <span <span class="k">class</span>="s">'<span class="n">0</span>'</span>)}] ${name}  — ${kb.<span class="f">toFixed</span>(<span class="n">0</span>)}KB  — hoàn thành sau ${elapsed}ms`</span>
+  );
+});
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`\n⏱  Tổng thời <span class="f">gian</span>(${BATCH_SIZE} file song song): ${totalTime} ms`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   CPU vật lý không bị chặn — V8 thread tự do trong suốt quá trình`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`\n💡 So sánh tư duy:`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Thread Pool <span class="n">4</span> luồng  → bottleneck nếu BATCH_SIZE &gt;&gt; <span class="n">4</span>`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Thread Pool ${cpuCount} luồng  → khai thác tối đa phần cứng ${cpuCount} lõi\n`</span>);
+
+<span <span class="k">class</span>="c">// Dọn dẹp</span>
+fs.<span class="f">rmSync</span>(TEMP_DIR, { recursive: <span class="k">true</span>, force: <span class="k">true</span> });
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'🧹 Đã xóa file tạm. Demo hoàn tất.\n'</span>);
+</code></pre>
+    </div>
+
+    <!-- Terminal output -->
+    <div class="panel terminal-panel" id="terminal-6">
+      <div class="panel-label terminal-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">🖥️ Terminal — node 06-demo-threadpool.js </span>
+      </div>
+      <pre class="terminal-content"><code>╔════════════════════════════════════════════════════════╗
+║   Demo: UV_THREADPOOL_SIZE &amp; Libuv Thread Pool 4.2.2  ║
+╚════════════════════════════════════════════════════════╝
+
+🖥️  Thông tin hệ thống:
+   CPU model   : 13th Gen Intel(R) Core(TM) i7-13620H
+   Lõi logic   : 16 lõi
+   UV_THREADPOOL_SIZE mặc định : 4
+   UV_THREADPOOL_SIZE đã thiết lập: 16
+   → Thread Pool mở rộng từ 4 → 16 luồng nền
+
+📁 Đã tạo 32 file test (~300KB mỗi file)
+
+⚡ Gửi 32 yêu cầu đọc file đồng thời...
+   Libuv thread pool xử lý song song (tối đa 16 luồng cùng lúc)
+
+📊 Kết quả từng file:
+   [01] img_batch_001.dat  — 300KB  — hoàn thành sau 13.5ms
+   [02] img_batch_002.dat  — 300KB  — hoàn thành sau 4.3ms
+   [03] img_batch_003.dat  — 300KB  — hoàn thành sau 4.2ms
+   [04] img_batch_004.dat  — 300KB  — hoàn thành sau 4.3ms
+   [05] img_batch_005.dat  — 300KB  — hoàn thành sau 4.2ms
+   [06] img_batch_006.dat  — 300KB  — hoàn thành sau 4.2ms
+   [07] img_batch_007.dat  — 300KB  — hoàn thành sau 4.1ms
+   [08] img_batch_008.dat  — 300KB  — hoàn thành sau 4.2ms
+   [09] img_batch_009.dat  — 300KB  — hoàn thành sau 4.2ms
+   [10] img_batch_010.dat  — 300KB  — hoàn thành sau 4.1ms
+   [11] img_batch_011.dat  — 300KB  — hoàn thành sau 4.2ms
+   [12] img_batch_012.dat  — 300KB  — hoàn thành sau 4.2ms
+   [13] img_batch_013.dat  — 300KB  — hoàn thành sau 4.2ms
+   [14] img_batch_014.dat  — 300KB  — hoàn thành sau 4.2ms
+   [15] img_batch_015.dat  — 300KB  — hoàn thành sau 4.2ms
+   [16] img_batch_016.dat  — 300KB  — hoàn thành sau 4.2ms
+   [17] img_batch_017.dat  — 300KB  — hoàn thành sau 4.2ms
+   [18] img_batch_018.dat  — 300KB  — hoàn thành sau 4.2ms
+   [19] img_batch_019.dat  — 300KB  — hoàn thành sau 4.2ms
+   [20] img_batch_020.dat  — 300KB  — hoàn thành sau 4.2ms
+   [21] img_batch_021.dat  — 300KB  — hoàn thành sau 4.2ms
+   [22] img_batch_022.dat  — 300KB  — hoàn thành sau 4.3ms
+   [23] img_batch_023.dat  — 300KB  — hoàn thành sau 4.2ms
+   [24] img_batch_024.dat  — 300KB  — hoàn thành sau 4.2ms
+   [25] img_batch_025.dat  — 300KB  — hoàn thành sau 4.2ms
+   [26] img_batch_026.dat  — 300KB  — hoàn thành sau 4.2ms
+   [27] img_batch_027.dat  — 300KB  — hoàn thành sau 4.2ms
+   [28] img_batch_028.dat  — 300KB  — hoàn thành sau 4.2ms
+   [29] img_batch_029.dat  — 300KB  — hoàn thành sau 4.2ms
+   [30] img_batch_030.dat  — 300KB  — hoàn thành sau 4.2ms
+   [31] img_batch_031.dat  — 300KB  — hoàn thành sau 4.2ms
+   [32] img_batch_032.dat  — 300KB  — hoàn thành sau 4.2ms
+
+⏱  Tổng thời gian (32 file song song): 13.83 ms
+   CPU vật lý không bị chặn — V8 thread tự do trong suốt quá trình
+
+💡 So sánh tư duy:
+   Thread Pool 4 luồng  → bottleneck nếu BATCH_SIZE &gt;&gt; 4
+   Thread Pool 16 luồng  → khai thác tối đa phần cứng 16 lõi
+
+🧹 Đã xóa file tạm. Demo hoàn tất.</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ========== DEMO 7 ========== -->
+  <div class="section" id="demo-7">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <span class="section-title">Demo 4.2.3 — async/await + fs.promises</span>
+      <span class="section-file">07-demo-async-await.js</span>
+    </div>
+
+    <!-- Code snippet -->
+    <div class="panel code-panel" id="code-7">
+      <div class="panel-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">📄 07-demo-async-await.js</span>
+      </div>
+      <pre class="code-content"><code>#!/usr/bin/env node
+<span <span class="k">class</span>="c">// =============================================================</span>
+<span <span class="k">class</span>="c">// DEMO <span class="n">4.2</span>.<span class="n">3</span> — Quản lý I/O với fs.promises + <span class="k">async</span>/<span class="k">await</span></span>
+<span <span class="k">class</span>="c">// Minh họa: <span class="k">async</span> <span class="k">function</span>, <span class="k">await</span>, <span class="k">try</span>/<span class="k">catch</span> tập trung,</span>
+<span <span class="k">class</span>="c">//           kiểm tra thư mục tồn tại, tạo output an toàn</span>
+<span <span class="k">class</span>="c">// Chạy:  node <span class="n">07</span>-demo-<span class="k">async</span>-<span class="k">await</span>.js</span>
+<span <span class="k">class</span>="c">// =============================================================</span>
+
+<span class="k">import</span> fs   <span class="k">from</span> <span <span class="k">class</span>="s">'fs'</span>;
+<span class="k">import</span> path <span class="k">from</span> <span <span class="k">class</span>="s">'path'</span>;
+<span class="k">import</span> { fileURLToPath } <span class="k">from</span> <span <span class="k">class</span>="s">'url'</span>;
+
+<span class="k">const</span> __dirname = path.<span class="f">dirname</span>(<span class="f">fileURLToPath</span>(<span class="k">import</span>.meta.url));
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╔══════════════════════════════════════════════════╗'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'║   Demo: <span class="k">async</span>/<span class="k">await</span> + fs.promises — Chương <span class="n">4.2</span>.<span class="n">3</span> ║'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╚══════════════════════════════════════════════════╝\n'</span>);
+
+<span <span class="k">class</span>="c">// ── BƯỚC <span class="n">1</span>: Hàm kiểm tra thư mục đầu vào tồn tại không ──────</span>
+<span class="k">async</span> <span class="k">function</span> <span class="f">checkInputDirectory</span>(inputDir) {
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`🔍 Kiểm tra thư mục đầu vào: "${inputDir}"`</span>);
+  <span class="k">try</span> {
+    <span <span class="k">class</span>="c">// fs.promises.access: kiểm tra quyền truy cậ<span class="f">p</span>(không đọc nội dung)</span>
+    <span class="k">await</span> fs.promises.<span class="f">access</span>(inputDir, fs.constants.R_OK);
+    <span class="k">const</span> stat = <span class="k">await</span> fs.promises.<span class="f">stat</span>(inputDir);
+
+    <span class="k">if</span> (!stat.<span class="f">isDirectory</span>()) {
+      <span class="k">throw</span> <span class="k">new</span> <span class="f">Error</span>(<span <span class="k">class</span>="t">`"${inputDir}" tồn tại nhưng không phải thư mục!`</span>);
+    }
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ✅ Thư mục hợp lệ — Kích thước: (thư mục, không có size)`</span>);
+    <span class="k">return</span> <span class="k">true</span>;
+  } <span class="k">catch</span> (err) {
+    <span <span class="k">class</span>="c">// <span class="k">try</span>/<span class="k">catch</span> TẬP TRUNG: <span class="n">1</span> chỗ xử lý mọi lỗi fs</span>
+    <span class="k">if</span> (err.code === <span <span class="k">class</span>="s">'ENOENT'</span>) {
+      <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ❌ Lỗi: Thư mục không tồn tạ<span class="f">i</span>(ENOENT)`</span>);
+    } <span class="k">else</span> <span class="k">if</span> (err.code === <span <span class="k">class</span>="s">'EACCES'</span>) {
+      <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ❌ Lỗi: Không có quyền đọc thư mụ<span class="f">c</span>(EACCES)`</span>);
+    } <span class="k">else</span> {
+      <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ❌ Lỗi: ${err.message}`</span>);
+    }
+    <span class="k">return</span> <span class="k">false</span>;
+  }
+}
+
+<span <span class="k">class</span>="c">// ── BƯỚC <span class="n">2</span>: Hàm tạo thư mục output an toàn ───────────────────</span>
+<span class="k">async</span> <span class="k">function</span> <span class="f">ensureOutputDirectory</span>(outputDir) {
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`\n📂 Chuẩn bị thư mục đầu ra: "${outputDir}"`</span>);
+  <span class="k">try</span> {
+    <span <span class="k">class</span>="c">// recursive: <span class="k">true</span> → không ném lỗi nếu thư mục đã tồn tại</span>
+    <span <span class="k">class</span>="c">//                 → tự tạo cả chuỗi thư mục cha</span>
+    <span class="k">await</span> fs.promises.<span class="f">mkdir</span>(outputDir, { recursive: <span class="k">true</span> });
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ✅ Thư mục output sẵn sà<span class="f">ng</span>(mới tạo hoặc đã tồn tại)`</span>);
+    <span class="k">return</span> <span class="k">true</span>;
+  } <span class="k">catch</span> (err) {
+    <span class="k">if</span> (err.code === <span <span class="k">class</span>="s">'EACCES'</span>) {
+      <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ❌ Lỗi EACCES: Không đủ quyền tạo thư mục tại "${outputDir}"`</span>);
+    } <span class="k">else</span> {
+      <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ❌ Lỗi không xác định: ${err.message}`</span>);
+    }
+    <span class="k">return</span> <span class="k">false</span>;
+  }
+}
+
+<span <span class="k">class</span>="c">// ── BƯỚC <span class="n">3</span>: Pipeline xử lý <span class="k">async</span> chính ───────────────────────</span>
+<span class="k">async</span> <span class="k">function</span> <span class="f">processImageBatch</span>(inputDir, outputDir) {
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n─── Pipeline <span class="k">async</span>/<span class="k">await</span> — Tuần tự nhưng không chặn ───\n'</span>);
+
+  <span <span class="k">class</span>="c">// Bước 3a: Kiểm tra input</span>
+  <span class="k">const</span> inputOk = <span class="k">await</span> <span class="f">checkInputDirectory</span>(inputDir);
+  <span class="k">if</span> (!inputOk) {
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n⛔ Dừng pipeline: thư mục đầu vào không hợp lệ.'</span>);
+    <span class="k">return</span>;
+  }
+
+  <span <span class="k">class</span>="c">// Bước 3b: Chuẩn bị output</span>
+  <span class="k">const</span> outputOk = <span class="k">await</span> <span class="f">ensureOutputDirectory</span>(outputDir);
+  <span class="k">if</span> (!outputOk) {
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n⛔ Dừng pipeline: không thể tạo thư mục đầu ra.'</span>);
+    <span class="k">return</span>;
+  }
+
+  <span <span class="k">class</span>="c">// Bước 3c: Quét danh sách file ảnh          </span>
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`\n📋 Quét danh sách file trong: "${inputDir}"`</span>);
+  <span class="k">try</span> {
+    <span class="k">const</span> entries = <span class="k">await</span> fs.promises.<span class="f">readdir</span>(inputDir, { withFileTypes: <span class="k">true</span> });
+    <span class="k">const</span> imageExts = [<span <span class="k">class</span>="s">'.jpg'</span>, <span <span class="k">class</span>="s">'.jpeg'</span>, <span <span class="k">class</span>="s">'.png'</span>, <span <span class="k">class</span>="s">'.webp'</span>, <span <span class="k">class</span>="s">'.avif'</span>];
+    <span class="k">const</span> imageFiles = entries.<span class="f">filter</span>(
+      (e) =&gt; e.<span class="f">isFile</span>() &amp;&amp; imageExts.<span class="f">includes</span>(path.<span class="f">extname</span>(e.name).<span class="f">toLowerCase</span>())
+    );
+
+    <span class="k">if</span> (imageFiles.length === <span class="n">0</span>) {
+      <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   ⚠️  Không tìm thấy file ảnh hợp lệ!'</span>);
+      <span class="k">return</span>;
+    }
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ✅ Tìm thấy ${imageFiles.length} file ảnh:`</span>);
+    imageFiles.<span class="f">forEach</span>((f) =&gt; <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`      - ${f.name}`</span>));
+
+    <span <span class="k">class</span>="c">// Bước 3d: Xử lý từng ả<span class="f">nh</span>(giả lập <span class="k">async</span>)</span>
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n⚙️  Bắt đầu xử lý từng ả<span class="f">nh</span>(<span class="k">await</span> trong vòng lặp):'</span>);
+    <span class="k">for</span> (<span class="k">const</span> file <span class="k">of</span> imageFiles) {
+      <span class="k">const</span> srcPath  = path.<span class="f">join</span>(inputDir, file.name);
+      <span class="k">const</span> stat     = <span class="k">await</span> fs.promises.<span class="f">stat</span>(srcPath);
+      <span class="k">const</span> sizeKB   = (stat.size / <span class="n">1024</span>).<span class="f">toFixed</span>(<span class="n">1</span>);
+      <span <span class="k">class</span>="c">// Giả lập: đọc buffer, nén, ghi ra output</span>
+      <span class="k">await</span> <span class="k">new</span> <span class="f">Promise</span>((r) =&gt; <span class="f">setTimeout</span>(r, <span class="n">50</span>)); <span <span class="k">class</span>="c">// Giả lập 50ms nén</span>
+      <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ✔ ${file.name} (${sizeKB}KB) → output xong`</span>);
+    }
+
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`\n✅ Pipeline hoàn tất! ${imageFiles.length} ảnh đã xử lý.\n`</span>);
+  } <span class="k">catch</span> (err) {
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`\n❌ Lỗi khi đọc thư mục: ${err.message}`</span>);
+  }
+}
+
+<span <span class="k">class</span>="c">// ── Chạy demo với thư mục thực của project ───────────────────</span>
+<span class="k">const</span> INPUT_DIR  = path.<span class="f">join</span>(__dirname, <span <span class="k">class</span>="s">'..'</span>, <span <span class="k">class</span>="s">'images'</span>);  <span <span class="k">class</span>="c">// Thư mục images thực</span>
+<span class="k">const</span> OUTPUT_DIR = path.<span class="f">join</span>(__dirname, <span <span class="k">class</span>="s">'_temp_output'</span>);  <span <span class="k">class</span>="c">// Thư mục output demo</span>
+
+<span class="k">await</span> <span class="f">processImageBatch</span>(INPUT_DIR, OUTPUT_DIR);
+
+<span <span class="k">class</span>="c">// Test thêm: thư mục KHÔNG TỒN TẠI</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n─── Test với thư mục KHÔNG tồn tại ───\n'</span>);
+<span class="k">await</span> <span class="f">processImageBatch</span>(<span <span class="k">class</span>="s">'/duong/dan/khong/ton/tai'</span>, OUTPUT_DIR);
+
+<span <span class="k">class</span>="c">// Dọn dẹp</span>
+<span class="k">await</span> fs.promises.<span class="f">rm</span>(OUTPUT_DIR, { recursive: <span class="k">true</span>, force: <span class="k">true</span> }).<span class="k">catch</span>(() =&gt; {});
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'🧹 Đã xóa thư mục output tạm.\n'</span>);
+</code></pre>
+    </div>
+
+    <!-- Terminal output -->
+    <div class="panel terminal-panel" id="terminal-7">
+      <div class="panel-label terminal-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">🖥️ Terminal — node 07-demo-async-await.js </span>
+      </div>
+      <pre class="terminal-content"><code>╔══════════════════════════════════════════════════╗
+║   Demo: async/await + fs.promises — Chương 4.2.3 ║
+╚══════════════════════════════════════════════════╝
+
+
+─── Pipeline async/await — Tuần tự nhưng không chặn ───
+
+🔍 Kiểm tra thư mục đầu vào: "C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\images"
+   ✅ Thư mục hợp lệ — Kích thước: (thư mục, không có size)
+
+📂 Chuẩn bị thư mục đầu ra: "C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\demo-scripts\_temp_output"
+   ✅ Thư mục output sẵn sàng (mới tạo hoặc đã tồn tại)
+
+📋 Quét danh sách file trong: "C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\images"
+   ⚠️  Không tìm thấy file ảnh hợp lệ!
+
+─── Test với thư mục KHÔNG tồn tại ───
+
+
+─── Pipeline async/await — Tuần tự nhưng không chặn ───
+
+🔍 Kiểm tra thư mục đầu vào: "/duong/dan/khong/ton/tai"
+   ❌ Lỗi: Thư mục không tồn tại (ENOENT)
+
+⛔ Dừng pipeline: thư mục đầu vào không hợp lệ.
+🧹 Đã xóa thư mục output tạm.</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ========== DEMO 8 ========== -->
+  <div class="section" id="demo-8">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <span class="section-title">Demo 4.3.1 — path module cơ bản</span>
+      <span class="section-file">08-demo-path-basics.js</span>
+    </div>
+
+    <!-- Code snippet -->
+    <div class="panel code-panel" id="code-8">
+      <div class="panel-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">📄 08-demo-path-basics.js</span>
+      </div>
+      <pre class="code-content"><code>#!/usr/bin/env node
+<span <span class="k">class</span>="c">// =============================================================</span>
+<span <span class="k">class</span>="c">// DEMO <span class="n">4.3</span>.<span class="n">1</span> — Module path: basename, extname, dirname, sep, delimiter</span>
+<span <span class="k">class</span>="c">// Minh họa: các hàm cắt/phân tích đường dẫn bất kể OS,</span>
+<span <span class="k">class</span>="c">//           path.sep và path.delimiter thích ứng nền tảng</span>
+<span <span class="k">class</span>="c">// Chạy:  node <span class="n">08</span>-demo-path-basics.js</span>
+<span <span class="k">class</span>="c">// =============================================================</span>
+
+<span class="k">import</span> path <span class="k">from</span> <span <span class="k">class</span>="s">'path'</span>;
+<span class="k">import</span> os   <span class="k">from</span> <span <span class="k">class</span>="s">'os'</span>;
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╔══════════════════════════════════════════════════════╗'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'║   Demo: Node.js path module cơ bản — Chương <span class="n">4.3</span>.<span class="n">1</span>   ║'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╚══════════════════════════════════════════════════════╝\n'</span>);
+
+<span <span class="k">class</span>="c">// ── Thông tin OS hiện tại ─────────────────────────────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`🖥️  Nền tảng hiện tại : ${os.<span class="f">platform</span>()} (${<span class="k">process</span>.platform})`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   path.sep          : "${path.sep}"   ← Ký tự phân cách thư mục`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   path.delimiter    : "${path.delimiter}"  ← Ký tự phân cách chuỗi PATH\n`</span>);
+
+<span <span class="k">class</span>="c">// ── Đường dẫn mẫu sử dụng trong demo ─────────────────────────</span>
+<span class="k">const</span> samplePaths = [
+  <span <span class="k">class</span>="s">'/home/admin/projects/batch-resizer/images/raw/photo_001.jpg'</span>,
+  <span <span class="k">class</span>="s">'C:\\Users\\Admin\\Desktop\\project\\images\\thumbnail.png'</span>,
+  <span <span class="k">class</span>="s">'/<span class="k">var</span>/app/output/<span class="n">2024</span>/banner.webp'</span>,
+  <span <span class="k">class</span>="s">'./relative/path/to/icon.svg'</span>,
+];
+
+<span <span class="k">class</span>="c">// ── Bảng phân tích từng hàm ───────────────────────────────────</span>
+<span class="k">const</span> funcs = [
+  { label: <span <span class="k">class</span>="s">'path.<span class="f">basename</span>(p)'</span>,         fn: (p) =&gt; path.<span class="f">basename</span>(p) },
+  { label: <span <span class="k">class</span>="s">'path.<span class="f">basename</span>(p, ext)'</span>,    fn: (p) =&gt; path.<span class="f">basename</span>(p, path.<span class="f">extname</span>(p)) },
+  { label: <span <span class="k">class</span>="s">'path.<span class="f">extname</span>(p)'</span>,          fn: (p) =&gt; path.<span class="f">extname</span>(p) },
+  { label: <span <span class="k">class</span>="s">'path.<span class="f">dirname</span>(p)'</span>,          fn: (p) =&gt; path.<span class="f">dirname</span>(p) },
+];
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'📋 Phân tích chi tiết từng hàm path:\n'</span>);
+
+samplePaths.<span class="f">forEach</span>((p, idx) =&gt; {
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`  [${idx + <span class="n">1</span>}] Đường dẫn: "${p}"`</span>);
+  funcs.<span class="f">forEach</span>(({ label, fn }) =&gt; {
+    <span class="k">const</span> result = <span class="f">fn</span>(p);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`       ${label.<span class="f">padEnd</span>(<span class="n">30</span>)} → "${result}"`</span>);
+  });
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">''</span>);
+});
+
+<span <span class="k">class</span>="c">// ── path.sep và path.delimiter ────────────────────────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'──────────────────────────────────────────────────────'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'🔍 path.sep — Ký tự phân cách thư mụ<span class="f">c</span>(OS-aware):'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Linux/macOS : path.posix.sep   = "${path.posix.sep}"`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Windows     : path.win32.sep   = "${path.win32.sep}"`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Hiện tại    : path.sep         = "${path.sep}"  ← Tự động theo OS\n`</span>);
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'🔍 path.delimiter — Ký tự phân cách biến PATH:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Linux/macOS : path.posix.delimiter = "${path.posix.delimiter}"`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Windows     : path.win32.delimiter = "${path.win32.delimiter}"`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Hiện tại    : path.delimiter       = "${path.delimiter}"\n`</span>);
+
+<span <span class="k">class</span>="c">// ── Ví dụ thực tế: lấy ảnh, đổi extension ────────────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'──────────────────────────────────────────────────────'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'💡 Ví dụ thực tế trong đồ án CLI:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'   Bài toán: Nhận ảnh .jpg, lưu output thành .webp\n'</span>);
+
+<span class="k">const</span> inputFile  = <span <span class="k">class</span>="s">'/home/admin/images/raw/photo_holiday.jpg'</span>;
+<span class="k">const</span> outputDir  = <span <span class="k">class</span>="s">'/home/admin/images/output'</span>;
+
+<span class="k">const</span> baseName   = path.<span class="f">basename</span>(inputFile, path.<span class="f">extname</span>(inputFile));
+<span <span class="k">class</span>="c">//                     └─ "photo_holiday"  (tên không có extension)</span>
+<span class="k">const</span> newExt     = <span <span class="k">class</span>="s">'.webp'</span>;
+<span class="k">const</span> outputFile = path.<span class="f">join</span>(outputDir, baseName + newExt);
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Input       : "${inputFile}"`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   basename    : "${baseName}"`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   extname     : "${path.<span class="f">extname</span>(inputFile)}"`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Output path : "${outputFile}"`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`\n   → path.join tự dùng "${path.sep}" phân cách, an toàn đa nền tảng!\n`</span>);
+</code></pre>
+    </div>
+
+    <!-- Terminal output -->
+    <div class="panel terminal-panel" id="terminal-8">
+      <div class="panel-label terminal-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">🖥️ Terminal — node 08-demo-path-basics.js </span>
+      </div>
+      <pre class="terminal-content"><code>╔══════════════════════════════════════════════════════╗
+║   Demo: Node.js path module cơ bản — Chương 4.3.1   ║
+╚══════════════════════════════════════════════════════╝
+
+🖥️  Nền tảng hiện tại : win32 (win32)
+   path.sep          : "\"   ← Ký tự phân cách thư mục
+   path.delimiter    : ";"  ← Ký tự phân cách chuỗi PATH
+
+📋 Phân tích chi tiết từng hàm path:
+
+  [1] Đường dẫn: "/home/admin/projects/batch-resizer/images/raw/photo_001.jpg"
+       path.basename(p)               → "photo_001.jpg"
+       path.basename(p, ext)          → "photo_001"
+       path.extname(p)                → ".jpg"
+       path.dirname(p)                → "/home/admin/projects/batch-resizer/images/raw"
+
+  [2] Đường dẫn: "C:\Users\Admin\Desktop\project\images\thumbnail.png"
+       path.basename(p)               → "thumbnail.png"
+       path.basename(p, ext)          → "thumbnail"
+       path.extname(p)                → ".png"
+       path.dirname(p)                → "C:\Users\Admin\Desktop\project\images"
+
+  [3] Đường dẫn: "/var/app/output/2024/banner.webp"
+       path.basename(p)               → "banner.webp"
+       path.basename(p, ext)          → "banner"
+       path.extname(p)                → ".webp"
+       path.dirname(p)                → "/var/app/output/2024"
+
+  [4] Đường dẫn: "./relative/path/to/icon.svg"
+       path.basename(p)               → "icon.svg"
+       path.basename(p, ext)          → "icon"
+       path.extname(p)                → ".svg"
+       path.dirname(p)                → "./relative/path/to"
+
+──────────────────────────────────────────────────────
+🔍 path.sep — Ký tự phân cách thư mục (OS-aware):
+   Linux/macOS : path.posix.sep   = "/"
+   Windows     : path.win32.sep   = "\"
+   Hiện tại    : path.sep         = "\"  ← Tự động theo OS
+
+🔍 path.delimiter — Ký tự phân cách biến PATH:
+   Linux/macOS : path.posix.delimiter = ":"
+   Windows     : path.win32.delimiter = ";"
+   Hiện tại    : path.delimiter       = ";"
+
+──────────────────────────────────────────────────────
+💡 Ví dụ thực tế trong đồ án CLI:
+   Bài toán: Nhận ảnh .jpg, lưu output thành .webp
+
+   Input       : "/home/admin/images/raw/photo_holiday.jpg"
+   basename    : "photo_holiday"
+   extname     : ".jpg"
+   Output path : "\home\admin\images\output\photo_holiday.webp"
+
+   → path.join tự dùng "\" phân cách, an toàn đa nền tảng!</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ========== DEMO 9 ========== -->
+  <div class="section" id="demo-9">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <span class="section-title">Demo 4.3.2 — path.join vs path.resolve</span>
+      <span class="section-file">09-demo-path-join-resolve.js</span>
+    </div>
+
+    <!-- Code snippet -->
+    <div class="panel code-panel" id="code-9">
+      <div class="panel-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">📄 09-demo-path-join-resolve.js</span>
+      </div>
+      <pre class="code-content"><code>#!/usr/bin/env node
+<span <span class="k">class</span>="c">// =============================================================</span>
+<span <span class="k">class</span>="c">// DEMO <span class="n">4.3</span>.<span class="n">2</span> — path.join vs path.resolve: so sánh cơ chế</span>
+<span <span class="k">class</span>="c">// Minh họa: nối từ vựng tuyến tí<span class="f">nh</span>(join) vs dịch chuyển không</span>
+<span <span class="k">class</span>="c">//           gian ngữ cảnh tuyệt đố<span class="f">i</span>(resolve), <span class="k">process</span>.<span class="f">cwd</span>()</span>
+<span <span class="k">class</span>="c">// Chạy:  node <span class="n">09</span>-demo-path-join-resolve.js</span>
+<span <span class="k">class</span>="c">// =============================================================</span>
+
+<span class="k">import</span> path <span class="k">from</span> <span <span class="k">class</span>="s">'path'</span>;
+<span class="k">import</span> { fileURLToPath } <span class="k">from</span> <span <span class="k">class</span>="s">'url'</span>;
+
+<span <span class="k">class</span>="c">// Trong ESM, không có __dirname sẵn — phải tự dựng</span>
+<span class="k">const</span> __filename = <span class="f">fileURLToPath</span>(<span class="k">import</span>.meta.url);
+<span class="k">const</span> __dirname  = path.<span class="f">dirname</span>(__filename);
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╔════════════════════════════════════════════════════════╗'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'║   Demo: path.join vs path.resolve — Chương <span class="n">4.3</span>.<span class="n">2</span>      ║'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╚════════════════════════════════════════════════════════╝\n'</span>);
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'📌 Ngữ cảnh thực thi:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   <span class="k">process</span>.<span class="f">cwd</span>()  = "${<span class="k">process</span>.<span class="f">cwd</span>()}"`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`               ↑ Thư mục người dùng ĐANG LÀM VIỆ<span class="f">C</span>(Working Directory)`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   __dirname      = "${__dirname}"`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`               ↑ Thư mục chứa file script này\n`</span>);
+
+<span <span class="k">class</span>="c">// ── Hàm tiện ích hiển thị so sánh ────────────────────────────</span>
+<span class="k">function</span> <span class="f">compare</span>(label, args) {
+  <span class="k">const</span> joined   = path.<span class="f">join</span>(...args);
+  <span class="k">const</span> resolved = path.<span class="f">resolve</span>(...args);
+
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`  📁 Input: [${args.<span class="f">map</span>((a) =&gt; `</span>"${a}"<span <span class="k">class</span>="t">`).<span class="f">join</span>(<span <span class="k">class</span>="s">', '</span>)}]`</span>);
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`     path.join    → "${joined}"`</span>);
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`     path.resolve → "${resolved}"`</span>);
+  <span class="k">const</span> isAbsJoin = path.<span class="f">isAbsolute</span>(joined);
+  <span class="k">const</span> isAbsRes  = path.<span class="f">isAbsolute</span>(resolved);
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`     isAbsolute   join=${isAbsJoin} | resolve=${isAbsRes}`</span>);
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">''</span>);
+}
+
+<span <span class="k">class</span>="c">// ── TEST CASE <span class="n">1</span>: Chỉ có đường dẫn tương đối ──────────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'─── TEST <span class="n">1</span>: Tất cả tham số tương đối ───'</span>);
+<span class="f">compare</span>(<span <span class="k">class</span>="s">'relative only'</span>, [<span <span class="k">class</span>="s">'images'</span>, <span <span class="k">class</span>="s">'raw'</span>, <span <span class="k">class</span>="s">'img1.jpg'</span>]);
+
+<span <span class="k">class</span>="c">// ── TEST CASE <span class="n">2</span>: Đường dẫn có segment điều hướng ─────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'─── TEST <span class="n">2</span>: Có ký tự điều hướ<span class="f">ng</span>(..) ───'</span>);
+<span class="f">compare</span>(<span <span class="k">class</span>="s">'navigate up'</span>, [<span <span class="k">class</span>="s">'images'</span>, <span <span class="k">class</span>="s">'..'</span>, <span <span class="k">class</span>="s">'output'</span>, <span <span class="k">class</span>="s">'result.jpg'</span>]);
+
+<span <span class="k">class</span>="c">// ── TEST CASE <span class="n">3</span>: Tham số đầu tiên là tuyệt đối ───────────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'─── TEST <span class="n">3</span>: Tham số đầu có đường dẫn tuyệt đối ───'</span>);
+<span class="k">const</span> root = <span class="k">process</span>.platform === <span <span class="k">class</span>="s">'win32'</span> ? <span <span class="k">class</span>="s">'C:\\Projects'</span> : <span <span class="k">class</span>="s">'/home/admin/project'</span>;
+<span class="f">compare</span>(<span <span class="k">class</span>="s">'first abs'</span>, [root, <span <span class="k">class</span>="s">'images'</span>, <span <span class="k">class</span>="s">'photo.jpg'</span>]);
+
+<span <span class="k">class</span>="c">// ── TEST CASE <span class="n">4</span>: Giữa dãy có đường dẫn tuyệt đố<span class="f">i</span>(BẪY!) ─────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'─── TEST <span class="n">4</span>: ⚠️  Bẫy! Tham số giữa dãy có đường dẫn tuyệt đối ───'</span>);
+<span class="k">const</span> abs2 = <span class="k">process</span>.platform === <span <span class="k">class</span>="s">'win32'</span> ? <span <span class="k">class</span>="s">'C:\\Logs'</span> : <span <span class="k">class</span>="s">'/<span class="k">var</span>/log'</span>;
+<span class="f">compare</span>(<span <span class="k">class</span>="s">'mid abs TRAP'</span>, [root, abs2, <span <span class="k">class</span>="s">'app.log'</span>]);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'  ⚠️  Giải thích:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'     path.join : ghép bình thường, giữ cả hai'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`     path.resolve: quét NGƯỢC từ phải, gặp "${abs2}" là tuyệt đối → DỪNG ngay!`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`     → Bỏ qua "${root}", chỉ giữ từ "${abs2}" trở đi\n`</span>);
+
+<span <span class="k">class</span>="c">// ── TEST CASE <span class="n">5</span>: Ứng dụng thực trong CLI xử lý ảnh ───────────</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'─── TEST <span class="n">5</span>: Ứng dụng thực — Xây dựng đường dẫn output ───'</span>);
+
+<span class="k">const</span> userInput  = <span <span class="k">class</span>="s">'./my_photos'</span>;       <span <span class="k">class</span>="c">// Tham số người dùng nhập</span>
+<span class="k">const</span> outputBase = <span <span class="k">class</span>="s">'resized'</span>;
+
+<span <span class="k">class</span>="c">// ❌ Sai: dùng __dirname — tìm file trong thư mục cài đặt npm</span>
+<span class="k">const</span> wrongPath  = path.<span class="f">join</span>(__dirname, userInput, <span <span class="k">class</span>="s">'photo.jpg'</span>);
+<span <span class="k">class</span>="c">// ✅ Đúng: dùng <span class="k">process</span>.<span class="f">cwd</span>() — tìm file ở thư mục người dùng đang đứng</span>
+<span class="k">const</span> rightPath  = path.<span class="f">resolve</span>(<span class="k">process</span>.<span class="f">cwd</span>(), userInput, <span <span class="k">class</span>="s">'photo.jpg'</span>);
+<span class="k">const</span> outputPath = path.<span class="f">resolve</span>(<span class="k">process</span>.<span class="f">cwd</span>(), outputBase, <span <span class="k">class</span>="s">'photo_resized.jpg'</span>);
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'  ❌ Dùng <span class="f">__dirname</span>(sai với CLI tool):'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`     ${wrongPath}`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'  ✅ Dùng <span class="k">process</span>.<span class="f">cwd</span>() (đúng — theo vị trí người dùng):'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`     Input  : ${rightPath}`</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`     Output : ${outputPath}\n`</span>);
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'  💡 Quy tắc vàng:'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'     __dirname → File nằm trong package <span class="f">code</span>(ví dụ: đọc template nội bộ)'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'     <span class="k">process</span>.<span class="f">cwd</span>() → File nằm theo ngữ cảnh terminal của người dùng\n'</span>);
+</code></pre>
+    </div>
+
+    <!-- Terminal output -->
+    <div class="panel terminal-panel" id="terminal-9">
+      <div class="panel-label terminal-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">🖥️ Terminal — node 09-demo-path-join-resolve.js </span>
+      </div>
+      <pre class="terminal-content"><code>╔════════════════════════════════════════════════════════╗
+║   Demo: path.join vs path.resolve — Chương 4.3.2      ║
+╚════════════════════════════════════════════════════════╝
+
+📌 Ngữ cảnh thực thi:
+   process.cwd()  = "C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI"
+               ↑ Thư mục người dùng ĐANG LÀM VIỆC (Working Directory)
+   __dirname      = "C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\demo-scripts"
+               ↑ Thư mục chứa file script này
+
+─── TEST 1: Tất cả tham số tương đối ───
+  📁 Input: ["images", "raw", "img1.jpg"]
+     path.join    → "images\raw\img1.jpg"
+     path.resolve → "C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\images\raw\img1.jpg"
+     isAbsolute   join=false | resolve=true
+
+─── TEST 2: Có ký tự điều hướng (..) ───
+  📁 Input: ["images", "..", "output", "result.jpg"]
+     path.join    → "output\result.jpg"
+     path.resolve → "C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\output\result.jpg"
+     isAbsolute   join=false | resolve=true
+
+─── TEST 3: Tham số đầu có đường dẫn tuyệt đối ───
+  📁 Input: ["C:\Projects", "images", "photo.jpg"]
+     path.join    → "C:\Projects\images\photo.jpg"
+     path.resolve → "C:\Projects\images\photo.jpg"
+     isAbsolute   join=true | resolve=true
+
+─── TEST 4: ⚠️  Bẫy! Tham số giữa dãy có đường dẫn tuyệt đối ───
+  📁 Input: ["C:\Projects", "C:\Logs", "app.log"]
+     path.join    → "C:\Projects\C:\Logs\app.log"
+     path.resolve → "C:\Logs\app.log"
+     isAbsolute   join=true | resolve=true
+
+  ⚠️  Giải thích:
+     path.join : ghép bình thường, giữ cả hai
+     path.resolve: quét NGƯỢC từ phải, gặp "C:\Logs" là tuyệt đối → DỪNG ngay!
+     → Bỏ qua "C:\Projects", chỉ giữ từ "C:\Logs" trở đi
+
+─── TEST 5: Ứng dụng thực — Xây dựng đường dẫn output ───
+  ❌ Dùng __dirname (sai với CLI tool):
+     C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\demo-scripts\my_photos\photo.jpg
+  ✅ Dùng process.cwd() (đúng — theo vị trí người dùng):
+     Input  : C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\my_photos\photo.jpg
+     Output : C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\resized\photo_resized.jpg
+
+  💡 Quy tắc vàng:
+     __dirname → File nằm trong package code (ví dụ: đọc template nội bộ)
+     process.cwd() → File nằm theo ngữ cảnh terminal của người dùng</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ========== DEMO 10 ========== -->
+  <div class="section" id="demo-10">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <span class="section-title">Demo 4.3.3 — fs.promises thao tác tệp</span>
+      <span class="section-file">10-demo-fs-operations.js</span>
+    </div>
+
+    <!-- Code snippet -->
+    <div class="panel code-panel" id="code-10">
+      <div class="panel-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">📄 10-demo-fs-operations.js</span>
+      </div>
+      <pre class="code-content"><code>#!/usr/bin/env node
+<span <span class="k">class</span>="c">// =============================================================</span>
+<span <span class="k">class</span>="c">// DEMO <span class="n">4.3</span>.<span class="n">3</span> — Thao tác hệ thống tệp cốt lõi với fs.promises</span>
+<span <span class="k">class</span>="c">// Minh họa: <span class="f">readdir</span>(quét thư mục), <span class="f">stat</span>(isFile/isDirectory),</span>
+<span <span class="k">class</span>="c">//           mkdir recursive, xử lý lỗi quyền truy cập</span>
+<span <span class="k">class</span>="c">// Chạy:  node <span class="n">10</span>-demo-fs-operations.js</span>
+<span <span class="k">class</span>="c">// =============================================================</span>
+
+<span class="k">import</span> fs   <span class="k">from</span> <span <span class="k">class</span>="s">'fs'</span>;
+<span class="k">import</span> path <span class="k">from</span> <span <span class="k">class</span>="s">'path'</span>;
+<span class="k">import</span> { fileURLToPath } <span class="k">from</span> <span <span class="k">class</span>="s">'url'</span>;
+
+<span class="k">const</span> __dirname = path.<span class="f">dirname</span>(<span class="f">fileURLToPath</span>(<span class="k">import</span>.meta.url));
+
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╔════════════════════════════════════════════════════════╗'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'║   Demo: fs.promises thao tác tệp hệ thống — <span class="n">4.3</span>.<span class="n">3</span>    ║'</span>);
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'╚════════════════════════════════════════════════════════╝\n'</span>);
+
+<span <span class="k">class</span>="c">// ── Chuẩn bị cấu trúc thư mục mẫu ────────────────────────────</span>
+<span class="k">const</span> DEMO_DIR = path.<span class="f">join</span>(__dirname, <span <span class="k">class</span>="s">'_temp_fs_demo'</span>);
+<span class="k">const</span> SCAN_DIR = path.<span class="f">join</span>(DEMO_DIR, <span <span class="k">class</span>="s">'batch_input'</span>);
+
+<span <span class="k">class</span>="c">// Tạo cấu trúc thư mục và file mẫu để quét</span>
+fs.<span class="f">mkdirSync</span>(path.<span class="f">join</span>(SCAN_DIR, <span <span class="k">class</span>="s">'subfolder'</span>), { recursive: <span class="k">true</span> });
+fs.<span class="f">writeFileSync</span>(path.<span class="f">join</span>(SCAN_DIR, <span <span class="k">class</span>="s">'photo_01.jpg'</span>),  Buffer.<span class="f">alloc</span>(<span class="n">1024</span> * <span class="n">200</span>));
+fs.<span class="f">writeFileSync</span>(path.<span class="f">join</span>(SCAN_DIR, <span <span class="k">class</span>="s">'banner.png'</span>),   Buffer.<span class="f">alloc</span>(<span class="n">1024</span> * <span class="n">500</span>));
+fs.<span class="f">writeFileSync</span>(path.<span class="f">join</span>(SCAN_DIR, <span <span class="k">class</span>="s">'notes.txt'</span>),    Buffer.<span class="k">from</span>(<span <span class="k">class</span>="s">'Ghi chú'</span>));
+fs.<span class="f">writeFileSync</span>(path.<span class="f">join</span>(SCAN_DIR, <span <span class="k">class</span>="s">'icon.svg'</span>),     Buffer.<span class="k">from</span>(<span <span class="k">class</span>="s">'&lt;svg/&gt;'</span>));
+fs.<span class="f">writeFileSync</span>(path.<span class="f">join</span>(SCAN_DIR, <span <span class="k">class</span>="s">'thumbnail.jpeg'</span>), Buffer.<span class="f">alloc</span>(<span class="n">1024</span> * <span class="n">80</span>));
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`📁 Cấu trúc mẫu đã tạo tại: ${SCAN_DIR}\n`</span>);
+
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span <span class="k">class</span>="c">// BƯỚC <span class="n">1</span>: fs.promises.readdir — Quét và liệt kê nội dung thư mục</span>
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'─── BƯỚC <span class="n">1</span>: fs.promises.readdir ───'</span>);
+<span class="k">try</span> {
+  <span class="k">const</span> entries = <span class="k">await</span> fs.promises.<span class="f">readdir</span>(SCAN_DIR, { withFileTypes: <span class="k">true</span> });
+  <span <span class="k">class</span>="c">//                                                 └─ withFileTypes=<span class="k">true</span> → trả về Dirent</span>
+  <span <span class="k">class</span>="c">//                                                    (không cần gọi stat thêm để biết loại)</span>
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   Tìm thấy ${entries.length} mục trong thư mục:\n`</span>);
+
+  <span class="k">for</span> (<span class="k">const</span> entry <span class="k">of</span> entries) {
+    <span class="k">const</span> type = entry.<span class="f">isDirectory</span>() ? <span <span class="k">class</span>="s">'[THƯ MỤC]'</span> : <span <span class="k">class</span>="s">'[FILE]   '</span>;
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ${type}  ${entry.name}`</span>);
+  }
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">''</span>);
+} <span class="k">catch</span> (err) {
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ❌ Lỗi readdir: ${err.message}`</span>);
+}
+
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span <span class="k">class</span>="c">// BƯỚC <span class="n">2</span>: fs.promises.stat — Trích xuất siêu dữ liệu từng file</span>
+<span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'─── BƯỚC <span class="n">2</span>: fs.promises.stat — Kiểm tra siêu dữ liệu ───'</span>);
+<span class="k">const</span> IMAGE_EXTS = [<span <span class="k">class</span>="s">'.jpg'</span>, <span <span class="k">class</span>="s">'.jpeg'</span>, <span <span class="k">class</span>="s">'.png'</span>, <span <span class="k">class</span>="s">'.webp'</span>, <span <span class="k">class</span>="s">'.avif'</span>];
+
+<span class="k">try</span> {
+  <span class="k">const</span> entries = <span class="k">await</span> fs.promises.<span class="f">readdir</span>(SCAN_DIR, { withFileTypes: <span class="k">true</span> });
+  <span class="k">const</span> imageFiles = [];
+
+  <span class="k">for</span> (<span class="k">const</span> entry <span class="k">of</span> entries) {
+    <span class="k">if</span> (!entry.<span class="f">isFile</span>()) continue; <span <span class="k">class</span>="c">// Bỏ qua thư mục con</span>
+
+    <span class="k">const</span> fullPath = path.<span class="f">join</span>(SCAN_DIR, entry.name);
+    <span class="k">const</span> stat     = <span class="k">await</span> fs.promises.<span class="f">stat</span>(fullPath);
+    <span class="k">const</span> ext      = path.<span class="f">extname</span>(entry.name).<span class="f">toLowerCase</span>();
+    <span class="k">const</span> isImage  = IMAGE_EXTS.<span class="f">includes</span>(ext);
+    <span class="k">const</span> sizeKB   = (stat.size / <span class="n">1024</span>).<span class="f">toFixed</span>(<span class="n">1</span>);
+    <span class="k">const</span> modified = stat.mtime.<span class="f">toLocaleTimeString</span>(<span <span class="k">class</span>="s">'vi-VN'</span>);
+
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   📄 ${entry.name}`</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`      <span class="f">isFile</span>()     : ${stat.<span class="f">isFile</span>()}`</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`      <span class="f">isDirectory</span>(): ${stat.<span class="f">isDirectory</span>()}`</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`      Kích thước   : ${sizeKB} KB`</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`      Sửa đổi lần cuối: ${modified}`</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`      Hợp lệ (ảnh): ${isImage ? <span <span class="k">class</span>="s">'✅ Có'</span> : <span <span class="k">class</span>="s">'❌ Không — sẽ bỏ qua'</span>}`</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">''</span>);
+
+    <span class="k">if</span> (isImage) imageFiles.<span class="f">push</span>({ name: entry.name, path: fullPath, sizeKB });
+  }
+
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   📊 Tổng kết: ${imageFiles.length} file ảnh hợp lệ / ${entries.length} mục\n`</span>);
+
+  <span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+  <span <span class="k">class</span>="c">// BƯỚC <span class="n">3</span>: fs.promises.mkdir — Tạo thư mục output an toàn</span>
+  <span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'─── BƯỚC <span class="n">3</span>: fs.promises.mkdir — Tạo thư mục output ───'</span>);
+  <span class="k">const</span> OUTPUT_DIR = path.<span class="f">join</span>(DEMO_DIR, <span <span class="k">class</span>="s">'processed'</span>, <span <span class="k">class</span>="s">'<span class="n">2024</span>'</span>, <span <span class="k">class</span>="s">'january'</span>);
+  <span <span class="k">class</span>="c">//                                     └─ Chuỗi thư mục lồng nhau sâu <span class="n">3</span> cấp</span>
+
+  <span class="k">try</span> {
+    <span class="k">await</span> fs.promises.<span class="f">mkdir</span>(OUTPUT_DIR, { recursive: <span class="k">true</span> });
+    <span <span class="k">class</span>="c">//                                   └─ recursive: <span class="k">true</span></span>
+    <span <span class="k">class</span>="c">//                                      → Tạo cả chuỗi "processed/<span class="n">2024</span>/january"</span>
+    <span <span class="k">class</span>="c">//                                      → KHÔNG ném lỗi nếu đã tồn tại sẵn</span>
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ✅ Tạo thành công: "${OUTPUT_DIR}"`</span>);
+    <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'      (recursive: <span class="k">true</span> → tạo cả <span class="n">3</span> cấp thư mục lồng nhau)\n'</span>);
+  } <span class="k">catch</span> (err) {
+    <span class="k">if</span> (err.code === <span <span class="k">class</span>="s">'EACCES'</span>) {
+      <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ❌ Lỗi EACCES: Không đủ quyền ghi — ${err.message}`</span>);
+    } <span class="k">else</span> {
+      <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ❌ Lỗi: ${err.message}`</span>);
+    }
+  }
+
+  <span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+  <span <span class="k">class</span>="c">// BƯỚC <span class="n">4</span>: Giả lập xử lý — copy ảnh hợp lệ sang output</span>
+  <span <span class="k">class</span>="c">// ═══════════════════════════════════════════════════════════════</span>
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'─── BƯỚC <span class="n">4</span>: Sao chép ảnh vào thư mục output ───'</span>);
+  <span class="k">for</span> (<span class="k">const</span> img <span class="k">of</span> imageFiles) {
+    <span class="k">const</span> destPath = path.<span class="f">join</span>(OUTPUT_DIR, img.name);
+    <span class="k">try</span> {
+      <span class="k">await</span> fs.promises.<span class="f">copyFile</span>(img.path, destPath);
+      <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ✅ ${img.name} (${img.sizeKB}KB) → output hoàn tất`</span>);
+    } <span class="k">catch</span> (err) {
+      <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`   ❌ ${img.name} → Lỗi: ${err.message}`</span>);
+    }
+  }
+
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'\n✅ Tất cả thao tác fs.promises hoàn tất!\n'</span>);
+} <span class="k">catch</span> (err) {
+  <span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="t">`❌ Lỗi tổng: ${err.message}`</span>);
+}
+
+<span <span class="k">class</span>="c">// ── Dọn dẹp ──────────────────────────────────────────────────</span>
+<span class="k">await</span> fs.promises.<span class="f">rm</span>(DEMO_DIR, { recursive: <span class="k">true</span>, force: <span class="k">true</span> });
+<span class="k">console</span>.<span class="f">log</span>(<span <span class="k">class</span>="s">'🧹 Đã xóa toàn bộ thư mục demo. Kết thúc.\n'</span>);
+</code></pre>
+    </div>
+
+    <!-- Terminal output -->
+    <div class="panel terminal-panel" id="terminal-10">
+      <div class="panel-label terminal-label">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="panel-title">🖥️ Terminal — node 10-demo-fs-operations.js </span>
+      </div>
+      <pre class="terminal-content"><code>╔════════════════════════════════════════════════════════╗
+║   Demo: fs.promises thao tác tệp hệ thống — 4.3.3    ║
+╚════════════════════════════════════════════════════════╝
+
+📁 Cấu trúc mẫu đã tạo tại: C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\demo-scripts\_temp_fs_demo\batch_input
+
+─── BƯỚC 1: fs.promises.readdir ───
+   Tìm thấy 6 mục trong thư mục:
+
+   [FILE]     banner.png
+   [FILE]     icon.svg
+   [FILE]     notes.txt
+   [FILE]     photo_01.jpg
+   [THƯ MỤC]  subfolder
+   [FILE]     thumbnail.jpeg
+
+─── BƯỚC 2: fs.promises.stat — Kiểm tra siêu dữ liệu ───
+   📄 banner.png
+      isFile()     : true
+      isDirectory(): false
+      Kích thước   : 500.0 KB
+      Sửa đổi lần cuối: 20:28:40
+      Hợp lệ (ảnh): ✅ Có
+
+   📄 icon.svg
+      isFile()     : true
+      isDirectory(): false
+      Kích thước   : 0.0 KB
+      Sửa đổi lần cuối: 20:28:40
+      Hợp lệ (ảnh): ❌ Không — sẽ bỏ qua
+
+   📄 notes.txt
+      isFile()     : true
+      isDirectory(): false
+      Kích thước   : 0.0 KB
+      Sửa đổi lần cuối: 20:28:40
+      Hợp lệ (ảnh): ❌ Không — sẽ bỏ qua
+
+   📄 photo_01.jpg
+      isFile()     : true
+      isDirectory(): false
+      Kích thước   : 200.0 KB
+      Sửa đổi lần cuối: 20:28:40
+      Hợp lệ (ảnh): ✅ Có
+
+   📄 thumbnail.jpeg
+      isFile()     : true
+      isDirectory(): false
+      Kích thước   : 80.0 KB
+      Sửa đổi lần cuối: 20:28:40
+      Hợp lệ (ảnh): ✅ Có
+
+   📊 Tổng kết: 3 file ảnh hợp lệ / 6 mục
+
+─── BƯỚC 3: fs.promises.mkdir — Tạo thư mục output ───
+   ✅ Tạo thành công: "C:\Users\admin\Desktop\Coding\SGU_project\Batch-Image-Resizer-CLI\demo-scripts\_temp_fs_demo\processed\2024\january"
+      (recursive: true → tạo cả 3 cấp thư mục lồng nhau)
+
+─── BƯỚC 4: Sao chép ảnh vào thư mục output ───
+   ✅ banner.png (500.0KB) → output hoàn tất
+   ✅ photo_01.jpg (200.0KB) → output hoàn tất
+   ✅ thumbnail.jpeg (80.0KB) → output hoàn tất
+
+✅ Tất cả thao tác fs.promises hoàn tất!
+
+🧹 Đã xóa toàn bộ thư mục demo. Kết thúc.</code></pre>
+    </div>
+  </div>
+
+
+</body>
+</html>

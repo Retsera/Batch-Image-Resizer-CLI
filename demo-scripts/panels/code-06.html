@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Code 6: Demo 4.2.2 — UV_THREADPOOL_SIZE</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#ffffff; padding:20px; font-family:'Segoe UI',sans-serif; }
+  .header {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 14px; background:#f0f4ff;
+    border-left:4px solid #0f3460; border-radius:4px; margin-bottom:12px;
+  }
+  .num { font-size:18px; font-weight:800; color:#0f3460; }
+  .title { font-size:13px; font-weight:600; color:#0f3460; flex:1; }
+  .ffile { font-size:11px; color:#6b7280; font-family:monospace;
+           background:#e5e7eb; padding:2px 6px; border-radius:3px; }
+  .panel { border-radius:8px; overflow:hidden;
+           border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .bar { display:flex; align-items:center; gap:6px;
+         padding:8px 14px; background:#f1f5f9; border-bottom:1px solid #e2e8f0; }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dr { background:#ef4444; } .dy { background:#f59e0b; } .dg { background:#22c55e; }
+  .bname { font-size:12px; font-weight:600; color:#374151;
+           font-family:monospace; margin-left:6px; }
+  pre { margin:0; padding:16px 18px; background:#fafafa;
+        font-family:Consolas,'Courier New',monospace; font-size:12.5px;
+        line-height:1.65; overflow-x:auto; white-space:pre; color:#1e293b; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="num">06</span>
+    <span class="title">Demo 4.2.2 — UV_THREADPOOL_SIZE</span>
+    <span class="ffile">06-demo-threadpool.js</span>
+  </div>
+  <div class="panel">
+    <div class="bar">
+      <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+      <span class="bname">📄 06-demo-threadpool.js</span>
+    </div>
+    <pre>#!/usr/bin/env node
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+<span style="color:#6b7280;font-style:italic">// DEMO <span style="color:#0284c7">4.2</span>.<span style="color:#0284c7">2</span> — UV_THREADPOOL_SIZE &amp; Libuv Thread Pool</span>
+<span style="color:#6b7280;font-style:italic">// Minh họa: cấu hình thread pool theo số lõi CPU,</span>
+<span style="color:#6b7280;font-style:italic">//           chạy nhiều tác vụ fs song song để quan sát hiệu quả</span>
+<span style="color:#6b7280;font-style:italic">// Chạy:  node <span style="color:#0284c7">06</span>-demo-threadpool.js</span>
+<span style="color:#6b7280;font-style:italic">// =============================================================</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> os   <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'os'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> fs   <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'fs'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> path <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'path'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> { fileURLToPath } <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'url'</span>;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> { performance }   <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">from</span> <span style="color:#16a34a">'perf_hooks'</span>;
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> __dirname = path.dirname(fileURLToPath(<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span>.meta.url));
+
+<span style="color:#6b7280;font-style:italic">// ── BƯỚC <span style="color:#0284c7">1</span>: Cấu hình UV_THREADPOOL_SIZE ──────────────────────</span>
+<span style="color:#6b7280;font-style:italic">//   MẶC ĐỊNH Libuv chỉ có <span style="color:#0284c7">4</span> luồng nền (rất bảo thủ)</span>
+<span style="color:#6b7280;font-style:italic">//   → Cần thiết lập TRƯỚC KHI require/<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">import</span> bất kỳ module fs nào</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> cpuCount = os.cpus().length;
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.env.UV_THREADPOOL_SIZE = String(cpuCount);
+<span style="color:#6b7280;font-style:italic">//           └─ Mở rộng thread pool bằng số lõi logic CPU thực tế</span>
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╔════════════════════════════════════════════════════════╗'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'║   Demo: UV_THREADPOOL_SIZE &amp; Libuv Thread Pool <span style="color:#0284c7">4.2</span>.<span style="color:#0284c7">2</span>  ║'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'╚════════════════════════════════════════════════════════╝\n'</span>);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'🖥️  Thông tin hệ thống:'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   CPU model   : ${os.cpus()[<span style="color:#0284c7">0</span>].model}`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   Lõi logic   : ${cpuCount} lõi`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   UV_THREADPOOL_SIZE mặc định : <span style="color:#0284c7">4</span>`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   UV_THREADPOOL_SIZE đã thiết lập: ${<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">process</span>.env.UV_THREADPOOL_SIZE}`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   → Thread Pool mở rộng từ <span style="color:#0284c7">4</span> → ${cpuCount} luồng nền\n`);
+
+<span style="color:#6b7280;font-style:italic">// ── BƯỚC <span style="color:#0284c7">2</span>: Chuẩn bị file test ───────────────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> TEMP_DIR   = path.join(__dirname, <span style="color:#16a34a">'_temp_threadpool'</span>);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> BATCH_SIZE = cpuCount * <span style="color:#0284c7">2</span>; <span style="color:#6b7280;font-style:italic">// Gửi gấp đôi số lõi để thấy rõ hiệu quả</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> FILE_KB    = <span style="color:#0284c7">300</span>;
+
+fs.mkdirSync(TEMP_DIR, { recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> });
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> filePaths = [];
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">for</span> (<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">let</span> i = <span style="color:#0284c7">1</span>; i &lt;= BATCH_SIZE; i++) {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> fp = path.join(TEMP_DIR, `img_batch_${String(i).padStart(<span style="color:#0284c7">3</span>, <span style="color:#16a34a">'<span style="color:#0284c7">0</span>'</span>)}.dat`);
+  fs.writeFileSync(fp, Buffer.alloc(FILE_KB * <span style="color:#0284c7">1024</span>, i % <span style="color:#0284c7">256</span>));
+  filePaths.push(fp);
+}
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`📁 Đã tạo ${BATCH_SIZE} file test (~${FILE_KB}KB mỗi file)\n`);
+
+<span style="color:#6b7280;font-style:italic">// ── BƯỚC <span style="color:#0284c7">3</span>: Gửi TẤT CẢ yêu cầu đọc đồng thời ────────────────</span>
+<span style="color:#6b7280;font-style:italic">//   Libuv sẽ phân phối công việc vào Thread Pool</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`⚡ Gửi ${BATCH_SIZE} yêu cầu đọc file đồng thời...`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   Libuv thread pool xử lý song song (tối đa ${cpuCount} luồng cùng lúc)\n`);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> startTime = performance.now();
+
+<span style="color:#6b7280;font-style:italic">// Tạo và chạy tất cả Promise song song</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> results = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> Promise.all(
+  filePaths.map(<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">async</span> (fp, idx) =&gt; {
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> t0   = performance.now();
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> data  = <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">await</span> fs.promises.readFile(fp);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> elapsed = (performance.now() - t0).toFixed(<span style="color:#0284c7">1</span>);
+    <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">return</span> { idx: idx + <span style="color:#0284c7">1</span>, name: path.basename(fp), kb: data.length / <span style="color:#0284c7">1024</span>, elapsed };
+  })
+);
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">const</span> totalTime = (performance.now() - startTime).toFixed(<span style="color:#0284c7">2</span>);
+
+<span style="color:#6b7280;font-style:italic">// ── BƯỚC <span style="color:#0284c7">4</span>: Hiển thị kết quả ─────────────────────────────────</span>
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'📊 Kết quả từng file:'</span>);
+results.forEach(({ idx, name, kb, elapsed }) =&gt; {
+  <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(
+    `   [${String(idx).padStart(<span style="color:#0284c7">2</span>, <span style="color:#16a34a">'<span style="color:#0284c7">0</span>'</span>)}] ${name}  — ${kb.toFixed(<span style="color:#0284c7">0</span>)}KB  — hoàn thành sau ${elapsed}ms`
+  );
+});
+
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`\n⏱  Tổng thời gian (${BATCH_SIZE} file song song): ${totalTime} ms`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   CPU vật lý không bị chặn — V8 thread tự do trong suốt quá trình`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`\n💡 So sánh tư duy:`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   Thread Pool <span style="color:#0284c7">4</span> luồng  → bottleneck nếu BATCH_SIZE &gt;&gt; <span style="color:#0284c7">4</span>`);
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(`   Thread Pool ${cpuCount} luồng  → khai thác tối đa phần cứng ${cpuCount} lõi\n`);
+
+<span style="color:#6b7280;font-style:italic">// Dọn dẹp</span>
+fs.rmSync(TEMP_DIR, { recursive: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span>, force: <span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">true</span> });
+<span style="color:#7c3aed;font-weight:<span style="color:#0284c7">600</span>">console</span>.log(<span style="color:#16a34a">'🧹 Đã xóa file tạm. Demo hoàn tất.\n'</span>);
+</pre>
+  </div>
+</body></html>
