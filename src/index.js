@@ -49,6 +49,10 @@ function parseSizes(value) {
   return [...new Set(sizes)];
 }
 
+function parseTimeoutSeconds(value) {
+  return parsePositiveInt(value, 'timeout');
+}
+
 function formatBytes(num) {
   return `${Number(num || 0).toLocaleString('en-US')} B`;
 }
@@ -426,6 +430,7 @@ async function main(options, ui) {
   const chalk = ui.chalk;
   const ora = ui.ora;
   const workers = Math.max(1, options.workers ?? Math.max(1, numCPUs - 1));
+  const timeoutSeconds = Math.max(1, options.timeout ?? 60);
   const overwrite = options.overwrite === true;
   const withStats = Boolean(options.withStats);
 
@@ -526,6 +531,8 @@ async function main(options, ui) {
 
   const pool = new WorkerPool({
     workers,
+    taskTimeoutMs: timeoutSeconds * 1000,
+    maxRetries: 2,
     logger: () => {},
   });
 
@@ -605,7 +612,7 @@ async function main(options, ui) {
 
   console.log(
     chalk.green.bold(
-      `\n✓ Hoàn tất: ${tasks.length} task trong ${totalMs} ms · workers=${workers}`
+      `\n✓ Hoàn tất: ${tasks.length} task trong ${totalMs} ms · workers=${workers} · timeout=${timeoutSeconds}s`
     )
   );
   if (skipped.length > 0) {
@@ -777,6 +784,12 @@ program
     'số worker xử lý song song (mặc định: số lõi CPU - 1)',
     (value) => parsePositiveInt(value, 'workers')
   )
+  .option(
+    '--timeout <seconds>',
+    'timeout cho mỗi task worker (giây, mặc định: 60)',
+    (value) => parseTimeoutSeconds(value),
+    60
+  )
   .option('--dry-run', 'chỉ liệt kê task sẽ xử lý, không resize thật', false)
   .option('--overwrite', 'ghi đè nếu file đích đã tồn tại', false)
   .option('--skip-existing', 'bỏ qua nếu file đích đã tồn tại (mặc định)', true)
@@ -838,6 +851,7 @@ async function bootstrap() {
       quality: opts.quality,
       format: opts.format,
       workers: opts.workers ?? Math.max(1, numCPUs - 1),
+      timeout: opts.timeout,
       dryRun: Boolean(opts.dryRun),
       overwrite: Boolean(opts.overwrite),
       skipExisting: Boolean(opts.skipExisting),
