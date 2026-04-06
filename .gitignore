@@ -8,4 +8,14 @@ resized/**
 # OS files
 .DS_Store
 Thumbs.db
-images/
+
+
+demo-scripts/screenshots/**
+
+*.docx
+
+tools/** 
+
+images/**
+resized/**
+

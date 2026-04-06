@@ -15,6 +15,9 @@ const { runBenchmark } = require('./utils/benchmark');
 
 const numCPUs = os.cpus().length;
 
+/** Ký hiệu output (demo / báo cáo) */
+const ICON = { ok: '✓', fail: '✕', bolt: '⚡', warn: '⚠', dot: '·', info: 'ℹ' };
+
 function parsePositiveInt(value, label) {
   const n = parseInt(value, 10);
   if (Number.isNaN(n) || n < 1) {
@@ -48,6 +51,20 @@ function parseSizes(value) {
 
 function formatBytes(num) {
   return `${Number(num || 0).toLocaleString('en-US')} B`;
+}
+
+/** Hiển thị dung lượng ngắn gọn (progress bar / tóm tắt). */
+function formatBytesHuman(num, decimals = 1) {
+  const n = Number(num) || 0;
+  if (n < 1024) return `${Math.round(n)} B`;
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let v = n;
+  let i = -1;
+  do {
+    v /= 1024;
+    i += 1;
+  } while (v >= 1024 && i < units.length - 1);
+  return `${v.toFixed(decimals)} ${units[i]}`;
 }
 
 function calcReduction(before, after) {
@@ -111,9 +128,11 @@ async function runTaskWithMetrics(pool, task) {
 }
 
 /**
- * Xử lý song song với giới hạn concurrency; gọi onProgress(completed, total) sau mỗi task xong.
+ * Xử lý song song với giới hạn concurrency.
+ * @param {{ onTaskStart?: (task: object, inputSizeHuman: string) => void, onProgress?: (completed: number, total: number, result?: object, task?: object) => void }} hooks
  */
-async function processBatchConcurrent(pool, tasks, concurrency, onProgress) {
+async function processBatchConcurrent(pool, tasks, concurrency, hooks = {}) {
+  const { onTaskStart, onProgress } = hooks;
   const total = tasks.length;
   if (total === 0) return [];
   const limit = Math.max(1, concurrency);
@@ -125,10 +144,19 @@ async function processBatchConcurrent(pool, tasks, concurrency, onProgress) {
     while (true) {
       const i = nextTask++;
       if (i >= total) break;
-      const r = await runTaskWithMetrics(pool, tasks[i]);
+      const task = tasks[i];
+      if (onTaskStart) {
+        try {
+          const st = await fs.stat(task.inputPath);
+          onTaskStart(task, formatBytesHuman(st.size));
+        } catch {
+          onTaskStart(task, '?');
+        }
+      }
+      const r = await runTaskWithMetrics(pool, task);
       results[i] = r;
       completed += 1;
-      if (onProgress) onProgress(completed, total);
+      if (onProgress) onProgress(completed, total, r, task);
     }
   }
 
@@ -138,36 +166,113 @@ async function processBatchConcurrent(pool, tasks, concurrency, onProgress) {
   return results;
 }
 
+function printSummaryTable(chalk, summary) {
+  const {
+    ok,
+    fail,
+    skippedTasks,
+    inputBytes,
+    outputBytes,
+    taskCount,
+  } = summary;
+  const savedPct =
+    inputBytes > 0
+      ? (((inputBytes - outputBytes) / inputBytes) * 100).toFixed(2)
+      : '0.00';
+
+  console.log(chalk.bold.magenta('\n╔══════════════════════════════════════════════════════════╗'));
+  console.log(chalk.bold.magenta('║') + chalk.bold.white('  ⚡ TÓM TẮT KẾT QUẢ ') + chalk.bold.magenta('                                      ║'));
+  console.log(chalk.bold.magenta('╠══════════════════════════════════════════════════════════╣'));
+  console.log(
+    chalk.bold.magenta('║') +
+      `  ${chalk.green('✓')} Thành công: ${chalk.white.bold(String(ok).padStart(6))} task                          ${chalk.bold.magenta('║')}`
+  );
+  console.log(
+    chalk.bold.magenta('║') +
+      `  ${chalk.red('✕')} Thất bại:   ${chalk.white.bold(String(fail).padStart(6))} task                          ${chalk.bold.magenta('║')}`
+  );
+  if (skippedTasks > 0) {
+    console.log(
+      chalk.bold.magenta('║') +
+        `  ${chalk.yellow('…')} Bỏ qua:     ${chalk.white.bold(String(skippedTasks).padStart(6))} task (file đích đã có)     ${chalk.bold.magenta('║')}`
+    );
+  }
+  console.log(
+    chalk.bold.magenta('║') +
+      `  ${chalk.cyan('⚡')} Dung lượng đầu vào (tổng):  ${chalk.white.bold(formatBytesHuman(inputBytes).padStart(10))}                 ${chalk.bold.magenta('║')}`
+  );
+  console.log(
+    chalk.bold.magenta('║') +
+      `  ${chalk.cyan('⚡')} Dung lượng đầu ra (đã ghi): ${chalk.white.bold(formatBytesHuman(outputBytes).padStart(10))}                 ${chalk.bold.magenta('║')}`
+  );
+  console.log(
+    chalk.bold.magenta('║') +
+      `  ${chalk.blue('▼')} Ước lượng giảm dung lượng:   ${chalk.white.bold((savedPct + '%').padStart(10))}                 ${chalk.bold.magenta('║')}`
+  );
+  console.log(
+    chalk.bold.magenta('║') +
+      `  ${chalk.gray('○')} Tổng task đã chạy:         ${chalk.white.bold(String(taskCount).padStart(6))}                          ${chalk.bold.magenta('║')}`
+  );
+  console.log(chalk.bold.magenta('╚══════════════════════════════════════════════════════════╝'));
+}
+
 async function runInteractiveWizard(ctx) {
   const { inquirer, chalk, numCPUs: cpus } = ctx;
   const defaultWorkers = Math.max(1, cpus - 1);
+
+  console.log(
+    chalk.cyan.bold('\n  ╔════════════════════════════════════════════════════════╗')
+  );
+  console.log(
+    chalk.cyan.bold('  ║') +
+      chalk.white.bold('     resize-cli — Batch Image Resizer (Interactive)     ') +
+      chalk.cyan.bold('║')
+  );
+  console.log(
+    chalk.cyan.bold('  ╚════════════════════════════════════════════════════════╝\n')
+  );
 
   const answers = await inquirer.prompt([
     {
       type: 'input',
       name: 'input',
-      message: 'Thư mục chứa ảnh nguồn:',
+      message: `${chalk.green('?')} Thư mục chứa ảnh nguồn:`,
       default: './images',
+      filter: (v) => String(v ?? '').trim(),
       validate: async (inputPath) => {
         const resolved = path.resolve(inputPath || '');
         try {
           const st = await fs.stat(resolved);
-          return st.isDirectory() ? true : 'Đường dẫn phải là thư mục';
+          if (!st.isDirectory()) return '✕ Đường dẫn phải là thư mục';
+          await fs.access(resolved, fs.constants.R_OK);
+          return true;
         } catch {
-          return 'Thư mục không tồn tại hoặc không đọc được';
+          return '✕ Thư mục không tồn tại hoặc không đọc được';
         }
       },
     },
     {
       type: 'input',
       name: 'output',
-      message: 'Thư mục ghi ảnh đã resize:',
+      message: `${chalk.green('?')} Thư mục ghi ảnh đã resize:`,
       default: './resized',
+      filter: (v) => String(v ?? '').trim(),
+      validate: async (outputPath) => {
+        const p = path.resolve(outputPath || './resized');
+        const parent = path.dirname(p);
+        try {
+          await fs.mkdir(parent, { recursive: true });
+          await fs.access(parent, fs.constants.W_OK);
+          return true;
+        } catch {
+          return '✕ Không tạo/ghi được thư mục đích (kiểm tra quyền)';
+        }
+      },
     },
     {
       type: 'list',
       name: 'widthMode',
-      message: 'Chiều rộng resize:',
+      message: `${chalk.green('?')} Chiều rộng resize:`,
       choices: [
         { name: 'Một kích thước (width)', value: 'single' },
         { name: 'Nhiều kích thước (sizes)', value: 'multiple' },
@@ -177,9 +282,10 @@ async function runInteractiveWizard(ctx) {
     {
       type: 'input',
       name: 'width',
-      message: 'Chiều rộng đích (pixel):',
+      message: `${chalk.green('?')} Chiều rộng đích (pixel, số nguyên > 0):`,
       default: '1024',
       when: (a) => a.widthMode === 'single',
+      filter: (v) => String(v ?? '').trim(),
       validate: (v) => {
         try {
           parsePositiveInt(String(v).trim(), 'width');
@@ -192,8 +298,9 @@ async function runInteractiveWizard(ctx) {
     {
       type: 'input',
       name: 'sizesString',
-      message: 'Danh sách chiều rộng (cách nhau bởi dấu phẩy), ví dụ 800,1200,1920:',
+      message: `${chalk.green('?')} Danh sách chiều rộng (phẩy), ví dụ 800,1200,1920:`,
       when: (a) => a.widthMode === 'multiple',
+      filter: (v) => String(v ?? '').trim(),
       validate: (v) => {
         try {
           const s = parseSizes(String(v).trim());
@@ -206,8 +313,9 @@ async function runInteractiveWizard(ctx) {
     {
       type: 'input',
       name: 'quality',
-      message: 'Chất lượng nén (1–100):',
+      message: `${chalk.green('?')} Chất lượng nén (1–100):`,
       default: '85',
+      filter: (v) => String(v ?? '').trim(),
       validate: (v) => {
         try {
           parseQuality(String(v).trim());
@@ -220,7 +328,7 @@ async function runInteractiveWizard(ctx) {
     {
       type: 'list',
       name: 'format',
-      message: 'Định dạng đầu ra:',
+      message: `${chalk.green('?')} Định dạng đầu ra:`,
       choices: [
         { name: 'JPEG', value: 'jpeg' },
         { name: 'WebP', value: 'webp' },
@@ -231,8 +339,9 @@ async function runInteractiveWizard(ctx) {
     {
       type: 'input',
       name: 'workers',
-      message: `Số workers (Enter = ${defaultWorkers} theo CPU):`,
+      message: `${chalk.green('?')} Số workers (Enter = ${defaultWorkers} theo CPU):`,
       default: String(defaultWorkers),
+      filter: (v) => String(v ?? '').trim(),
       validate: (v) => {
         const s = String(v).trim();
         if (s === '') return true;
@@ -247,7 +356,7 @@ async function runInteractiveWizard(ctx) {
     {
       type: 'confirm',
       name: 'overwrite',
-      message: 'Ghi đè file đích nếu đã tồn tại? (No = bỏ qua file trùng)',
+      message: `${chalk.green('?')} Ghi đè file đích nếu đã tồn tại? (${chalk.yellow('No')} = bỏ qua file trùng)`,
       default: false,
     },
   ]);
@@ -265,6 +374,38 @@ async function runInteractiveWizard(ctx) {
       ? parsePositiveInt(String(answers.width).trim(), 'width')
       : 1024;
 
+  const previewLines = [
+    `  ${chalk.cyan('⚡')} Nguồn:     ${path.resolve(answers.input)}`,
+    `  ${chalk.cyan('⚡')} Đích:      ${path.resolve(answers.output)}`,
+    `  ${chalk.cyan('⚡')} Kích thước: ${
+      answers.widthMode === 'multiple'
+        ? parseSizes(String(answers.sizesString).trim()).join(', ') + ' px'
+        : `${width} px`
+    }`,
+    `  ${chalk.cyan('⚡')} Chất lượng: ${parseQuality(String(answers.quality).trim())}`,
+    `  ${chalk.cyan('⚡')} Định dạng:  ${answers.format}`,
+    `  ${chalk.cyan('⚡')} Workers:    ${workers}`,
+    `  ${chalk.cyan('⚡')} Ghi đè:     ${answers.overwrite ? chalk.yellow('Có') : chalk.green('Không (skip)')}`,
+  ];
+  console.log(chalk.bold.white('\n  ─── Xác nhận cấu hình ───'));
+  previewLines.forEach((line) => console.log(line));
+  console.log('');
+
+  const { go } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'go',
+      message: `${chalk.green('?')} Bắt đầu resize với cấu hình trên?`,
+      default: true,
+    },
+  ]);
+
+  if (!go) {
+    const err = new Error('USER_CANCELLED');
+    err.code = 'USER_CANCELLED';
+    throw err;
+  }
+
   return {
     input: path.normalize(answers.input),
     output: path.normalize(answers.output),
@@ -280,30 +421,38 @@ async function runInteractiveWizard(ctx) {
 }
 
 async function main(options, ui) {
+  process.env.RESIZE_CLI_QUIET_WORKER = '1';
+
   const chalk = ui.chalk;
   const ora = ui.ora;
   const workers = Math.max(1, options.workers ?? Math.max(1, numCPUs - 1));
   const overwrite = options.overwrite === true;
+  const withStats = Boolean(options.withStats);
 
   const spinner = ora({
-    text: chalk.cyan('Đang quét thư mục ảnh…'),
+    text: chalk.cyan('⚡ Đang quét thư mục ảnh…'),
     color: 'cyan',
   }).start();
 
   let images;
+  const tScan0 = Date.now();
   try {
     images = await getAllImages(options.input);
   } catch (err) {
-    spinner.fail(chalk.red(`Lỗi khi quét thư mục: ${err.message}`));
+    spinner.fail(chalk.red(`✕ Lỗi khi quét thư mục: ${err.message}`));
     throw err;
   }
+  const scanMs = Date.now() - tScan0;
 
   if (images.length === 0) {
-    spinner.warn(chalk.yellow(`Không tìm thấy ảnh nào trong: ${options.input}`));
+    spinner.warn(chalk.yellow(`… Không tìm thấy ảnh nào trong: ${options.input}`));
     return;
   }
 
-  spinner.succeed(chalk.green(`Đã quét xong — ${images.length} ảnh`));
+  spinner.succeed(
+    chalk.green(`✓ Đã quét xong — ${images.length} ảnh`) +
+      (withStats ? chalk.gray(` (${scanMs} ms)`) : '')
+  );
 
   const allTasks = generateTasks(images, options);
 
@@ -318,26 +467,60 @@ async function main(options, ui) {
   }
 
   if (options.dryRun) {
-    console.log(chalk.cyan('\n[DRY-RUN] Danh sách file sẽ xử lý:'));
+    console.log(
+      chalk.bold.cyan('\n╔══════════════════════════════════════════════════════════╗')
+    );
+    console.log(
+      chalk.bold.cyan('║') +
+        chalk.bold.white('  ◆ DRY-RUN — không ghi file, chỉ liệt kê task  ') +
+        chalk.bold.cyan('       ║')
+    );
+    console.log(
+      chalk.bold.cyan('╚══════════════════════════════════════════════════════════╝')
+    );
     tasks.forEach((task) => {
-      console.log(`- [${task.size}px] ${task.inputPath} -> ${task.outputPath}`);
+      console.log(
+        chalk.gray('  · ') +
+          chalk.white(`[${task.size}px] `) +
+          chalk.cyan(path.basename(task.inputPath)) +
+          chalk.gray(' → ') +
+          task.outputPath
+      );
     });
     console.log(
-      chalk.cyan(`\n[DRY-RUN] Tổng task: ${tasks.length}, bỏ qua: ${skipped.length}`)
+      chalk.cyan(
+        `\n  ${ICON.ok} Sẽ xử lý: ${chalk.bold.white(tasks.length)} task  |  ` +
+          `${ICON.warn} Bỏ qua: ${chalk.bold.yellow(skipped.length)} task\n`
+      )
+    );
+    printSummaryTable(chalk, {
+      ok: 0,
+      fail: 0,
+      skippedTasks: skipped.length,
+      inputBytes: 0,
+      outputBytes: 0,
+      taskCount: tasks.length,
+    });
+    console.log(
+      chalk.dim(
+        `  ${ICON.info} Dry-run: chưa ghi file — cột dung lượng hiển thị 0 (ước lượng sau khi chạy thật).\n`
+      )
     );
     return;
   }
 
   if (tasks.length === 0) {
     console.log(
-      chalk.yellow('Tất cả file đích đã tồn tại — không có gì để xử lý (skip).')
+      chalk.yellow('… Tất cả file đích đã tồn tại — không có gì để xử lý (skip).')
     );
     return;
   }
 
   if (skipped.length > 0) {
     console.log(
-      chalk.yellow(`Cảnh báo: ${skipped.length} task bị bỏ qua do file đích đã tồn tại.`)
+      chalk.yellow(
+        `… Cảnh báo: ${skipped.length} task bị bỏ qua do file đích đã tồn tại.`
+      )
     );
   }
 
@@ -348,7 +531,7 @@ async function main(options, ui) {
 
   const onShutdown = async (reason) => {
     try {
-      if (reason) console.error(chalk.red(reason));
+      if (reason) console.error(chalk.red(`✕ ${reason}`));
       await pool.closeAll();
     } catch {
       // ignore
@@ -369,26 +552,46 @@ async function main(options, ui) {
   );
 
   let results = [];
+  /** Không dùng mã màu trong chuỗi progress (tránh lệch độ rộng terminal). */
+  let barCurrentPlain = '— chờ —';
   const bar = new cliProgress.SingleBar(
     {
       clearOnComplete: false,
       hideCursor: true,
-      format:
-        'Resize |{bar}| {percentage}% | ảnh {value}/{total} | {imgPerSec} ảnh/giây | đã chạy {duration_formatted} | còn ~{eta_formatted}',
+      format: `${ICON.bolt} {bar}| {percentage}% | {value}/{total} | {current} | {imgPerSec} img/s | {duration_formatted} | ETA {eta_formatted}`,
       barCompleteChar: '\u2588',
       barIncompleteChar: '\u2591',
+      barsize: 22,
     },
     cliProgress.Presets.shades_classic
   );
 
   const processStart = Date.now();
-  bar.start(tasks.length, 0, { imgPerSec: '0.00' });
+  let lastBarValue = 0;
+  bar.start(tasks.length, 0, {
+    imgPerSec: '0.00',
+    current: barCurrentPlain,
+  });
 
   try {
-    results = await processBatchConcurrent(pool, tasks, workers, (completed, total) => {
-      const elapsedSec = (Date.now() - processStart) / 1000;
-      const imgPerSec = elapsedSec > 0 ? (completed / elapsedSec).toFixed(2) : '0.00';
-      bar.update(completed, { imgPerSec });
+    results = await processBatchConcurrent(pool, tasks, workers, {
+      onTaskStart: (task, inputSizeHuman) => {
+        const base = path.basename(task.inputPath);
+        const short =
+          base.length > 22 ? `${base.slice(0, 19)}...` : base.padEnd(22, ' ');
+        barCurrentPlain = `${short} | ${inputSizeHuman} | ${task.size}px`;
+        const elapsedSec = (Date.now() - processStart) / 1000;
+        const imgPerSec =
+          elapsedSec > 0 ? (lastBarValue / elapsedSec).toFixed(2) : '0.00';
+        bar.update(lastBarValue, { current: barCurrentPlain, imgPerSec });
+      },
+      onProgress: (completed) => {
+        lastBarValue = completed;
+        const elapsedSec = (Date.now() - processStart) / 1000;
+        const imgPerSec =
+          elapsedSec > 0 ? (completed / elapsedSec).toFixed(2) : '0.00';
+        bar.update(completed, { current: barCurrentPlain, imgPerSec });
+      },
     });
   } finally {
     process.removeListener('SIGINT', handleSigInt);
@@ -401,39 +604,77 @@ async function main(options, ui) {
   const totalMs = endTime - processStart;
 
   console.log(
-    chalk.green(
-      `\nHoàn tất: ${tasks.length} task trong ${totalMs} ms (workers=${workers}).`
+    chalk.green.bold(
+      `\n✓ Hoàn tất: ${tasks.length} task trong ${totalMs} ms · workers=${workers}`
     )
   );
-  console.log(
-    chalk.gray(`Đã bỏ qua ${skipped.length} task do trùng file đích (nếu có).`)
-  );
+  if (skipped.length > 0) {
+    console.log(
+      chalk.gray(`  … Đã bỏ qua ${skipped.length} task do trùng file đích.`)
+    );
+  }
 
   const okRows = results
     .filter((r) => r && r.status === 'done')
     .map((r) => ({
       file: path.basename(r.inputPath),
       size: `${r.size}px`,
-      before: formatBytes(r.beforeBytes),
-      after: formatBytes(r.afterBytes),
+      before: formatBytesHuman(r.beforeBytes),
+      after: formatBytesHuman(r.afterBytes),
       reduced: r.reduction,
       time: `${r.durationMs} ms`,
     }));
 
+  let inputBytesSum = 0;
+  let outputBytesSum = 0;
+  for (const r of results) {
+    if (!r) continue;
+    inputBytesSum += Number(r.beforeBytes) || 0;
+    if (r.status === 'done') outputBytesSum += Number(r.afterBytes) || 0;
+  }
+
+  printSummaryTable(chalk, {
+    ok: okRows.length,
+    fail: results.filter((r) => r && r.status === 'error').length,
+    skippedTasks: skipped.length,
+    inputBytes: inputBytesSum,
+    outputBytes: outputBytesSum,
+    taskCount: tasks.length,
+  });
+
   if (okRows.length > 0) {
-    console.log(chalk.green('\nChi tiết resize:'));
+    console.log(chalk.green.bold('\n✓ Chi tiết từng file (thành công):'));
     console.table(okRows);
   }
 
   const errors = results.filter((r) => r && r.status === 'error');
   if (errors.length > 0) {
     console.error(
-      chalk.red(`Lỗi ${errors.length}/${results.length} file:`)
+      chalk.red.bold(`\n✕ Lỗi ${errors.length}/${results.length} task:`)
     );
     errors.forEach((e) =>
-      console.error(chalk.red(`  - ${e.input || e.inputPath}: ${e.error}`))
+      console.error(
+        chalk.red(`  ✕ ${e.input || path.basename(e.inputPath || '')}: ${e.error}`)
+      )
     );
     process.exitCode = 1;
+  }
+
+  if (withStats) {
+    const thr = totalMs > 0 ? ((tasks.length / totalMs) * 1000).toFixed(2) : '0';
+    const mbIn = inputBytesSum / (1024 * 1024);
+    const mbOut = outputBytesSum / (1024 * 1024);
+    const mbps = totalMs > 0 ? ((mbIn / totalMs) * 1000).toFixed(2) : '0';
+    console.log(chalk.magenta.bold('\n⚡ Benchmark (hiệu năng thô)'));
+    console.table({
+      'Quét thư mục (ms)': scanMs,
+      'Xử lý resize (ms)': totalMs,
+      'Throughput (task/s)': thr,
+      'Đầu vào tổng (MB)': mbIn.toFixed(2),
+      'Đầu ra tổng (MB)': mbOut.toFixed(2),
+      'Workers': workers,
+      'MB đầu vào / giây (ước lượng)': mbps,
+    });
   }
 
   const logPayload = {
@@ -446,7 +687,11 @@ async function main(options, ui) {
       success: okRows.length,
       failed: errors.length,
       totalTimeMs: totalMs,
+      scanMs,
       workers,
+      inputBytesSum,
+      outputBytesSum,
+      withStats,
     },
     results,
   };
@@ -454,18 +699,53 @@ async function main(options, ui) {
   await fs.mkdir(options.output, { recursive: true });
   const logPath = path.join(options.output, 'resize-log.json');
   await writeJsonFile(logPath, logPayload);
-  console.log(chalk.green(`Đã ghi log: ${logPath}`));
+  console.log(chalk.green.bold(`\n✓ Đã ghi log: ${logPath}`));
 }
+
+const HELP_AFTER = `
+${ICON.bolt} VÍ DỤ SỬ DỤNG
+
+  ${ICON.ok} Chế độ tương tác (wizard — không tham số):
+      node src/index.js
+
+  ${ICON.ok} Một kích thước, thư mục tùy chỉnh:
+      node src/index.js -i ./images -o ./resized --width 800 --format webp
+
+  ${ICON.ok} Nhiều kích thước (mỗi size một thư mục con trong --output):
+      node src/index.js --sizes 640,1024,1920 -o ./out --quality 90
+
+  ${ICON.ok} Dry-run (chỉ liệt kê, không ghi file):
+      node src/index.js --dry-run --sizes 800,1200
+
+  ${ICON.ok} Ghi đè file đích, 6 worker:
+      node src/index.js --overwrite -w 6
+
+  ${ICON.bolt} Benchmark Stream vs Buffer + so sánh số worker:
+      node src/index.js --benchmark -i ./images -o ./resized
+
+  ${ICON.ok} Sau resize, in thêm bảng hiệu năng thô (${ICON.bolt} throughput):
+      node src/index.js --overwrite --with-stats
+
+${ICON.warn} Mặc định bỏ qua file đích đã tồn tại — dùng --overwrite để ghi đè.
+${ICON.info} Định dạng đầu ra: jpeg | webp | avif
+`;
 
 program
   .name('resize-cli')
   .description(
-    `Công cụ dòng lệnh resize ảnh hàng loạt (batch) bằng Sharp.\n` +
-      `Đọc ảnh từ thư mục --input, ghi ảnh đã resize ra --output.\n` +
-      `Hỗ trợ multi-size (--sizes), dry-run, skip/overwrite, và chế độ tương tác (không tham số).`
+    `${ICON.bolt} Batch Image Resizer — CLI Node.js (Sharp + Worker Threads + Streams).\n` +
+      `${ICON.ok} Quét --input, resize theo --width hoặc --sizes, ghi --output (giữ cấu trúc thư mục con).\n` +
+      `${ICON.info} Không tham số → wizard tương tác. Dùng -h để xem đầy đủ tùy chọn và ví dụ.`
   )
   .version(version, '-V, --version', 'hiển thị phiên bản')
-  .helpOption('-h, --help', 'hiển thị trợ giúp');
+  .helpOption('-h, --help', 'trợ giúp chi tiết + ví dụ');
+
+program.configureHelp({
+  sortOptions: true,
+  subcommandTerm: (cmd) => cmd.name(),
+});
+
+program.addHelpText('after', HELP_AFTER);
 
 program
   .option('-i, --input <path>', 'thư mục chứa ảnh nguồn', './images')
@@ -500,7 +780,24 @@ program
   .option('--dry-run', 'chỉ liệt kê task sẽ xử lý, không resize thật', false)
   .option('--overwrite', 'ghi đè nếu file đích đã tồn tại', false)
   .option('--skip-existing', 'bỏ qua nếu file đích đã tồn tại (mặc định)', true)
-  .option('--benchmark', 'chạy benchmark hiệu năng (Streams vs Buffer & Workers)', false);
+  .option(
+    '--benchmark',
+    'chế độ benchmark: so sánh Stream vs Buffer + batch với 4/8/12 workers (không chạy resize CLI thường)',
+    false
+  )
+  .option(
+    '--with-stats',
+    'sau khi resize xong, in thêm bảng throughput / dung lượng (demo hiệu năng)',
+    false
+  );
+
+async function validateCliInputDir(inputPath) {
+  const resolved = path.resolve(inputPath);
+  const st = await fs.stat(resolved);
+  if (!st.isDirectory()) {
+    throw new Error('Tham số --input phải trỏ tới thư mục tồn tại');
+  }
+}
 
 async function bootstrap() {
   const chalk = (await import('chalk')).default;
@@ -512,11 +809,27 @@ async function bootstrap() {
 
   let options;
   if (interactive) {
-    console.log(chalk.cyan.bold('\n resize-cli — chế độ tương tác\n'));
-    options = await runInteractiveWizard({ inquirer, chalk, numCPUs });
+    console.log(
+      chalk.cyan.bold(`\n${ICON.bolt} resize-cli — chế độ tương tác\n`)
+    );
+    try {
+      options = await runInteractiveWizard({ inquirer, chalk, numCPUs });
+    } catch (e) {
+      if (e && e.code === 'USER_CANCELLED') {
+        console.log(chalk.yellow(`\n${ICON.warn} Đã hủy — không thực hiện resize.\n`));
+        process.exit(0);
+      }
+      throw e;
+    }
   } else {
     program.parse(process.argv);
     const opts = program.opts();
+    try {
+      await validateCliInputDir(opts.input);
+    } catch (e) {
+      console.error(chalk.red(`${ICON.fail} ${e.message}`));
+      process.exit(1);
+    }
     options = {
       input: path.normalize(opts.input),
       output: path.normalize(opts.output),
@@ -529,6 +842,7 @@ async function bootstrap() {
       overwrite: Boolean(opts.overwrite),
       skipExisting: Boolean(opts.skipExisting),
       benchmark: Boolean(opts.benchmark),
+      withStats: Boolean(opts.withStats),
     };
   }
 
