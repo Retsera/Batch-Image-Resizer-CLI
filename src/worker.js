@@ -29,7 +29,10 @@ const HIGH_WATER_MARK = 64 * 1024; // 64KB - Kiểm soát lượng dữ liệu �
  * @param {string} stage Giai đoạn (Before/After)
  * @param {string} filename Tên file đang xử lý
  */
+const WORKER_QUIET = process.env.RESIZE_CLI_QUIET_WORKER === '1';
+
 function logMemoryUsage(stage, filename) {
+    if (WORKER_QUIET) return;
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
     console.log(`[Worker] Memory ${stage} processing ${filename}: ${Math.round(used * 100) / 100} MB`);
 }
@@ -102,7 +105,9 @@ parentPort.on('message', async (task) => {
              * - Thử lại tối đa 2 lần giúp tăng tính bền vững (robustness) cho hệ thống batch processing.
              */
             if (attempts <= MAX_RETRIES) {
-                console.warn(`[Worker] Lỗi khi xử lý ${filename} (Lần thử ${attempts}): ${err.message}. Đang thử lại...`);
+                if (!WORKER_QUIET) {
+                    console.warn(`[Worker] Lỗi khi xử lý ${filename} (Lần thử ${attempts}): ${err.message}. Đang thử lại...`);
+                }
                 // Nghỉ một chút trước khi thử lại (backoff nhẹ)
                 await new Promise(resolve => setTimeout(resolve, 500)); 
             } else {
