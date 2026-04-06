@@ -11,6 +11,7 @@ const {
   writeJsonFile,
 } = require('./utils/fsUtils');
 const { WorkerPool } = require('./workerPool');
+const { runBenchmark } = require('./utils/benchmark');
 
 const numCPUs = os.cpus().length;
 
@@ -498,7 +499,8 @@ program
   )
   .option('--dry-run', 'chỉ liệt kê task sẽ xử lý, không resize thật', false)
   .option('--overwrite', 'ghi đè nếu file đích đã tồn tại', false)
-  .option('--skip-existing', 'bỏ qua nếu file đích đã tồn tại (mặc định)', true);
+  .option('--skip-existing', 'bỏ qua nếu file đích đã tồn tại (mặc định)', true)
+  .option('--benchmark', 'chạy benchmark hiệu năng (Streams vs Buffer & Workers)', false);
 
 async function bootstrap() {
   const chalk = (await import('chalk')).default;
@@ -526,10 +528,15 @@ async function bootstrap() {
       dryRun: Boolean(opts.dryRun),
       overwrite: Boolean(opts.overwrite),
       skipExisting: Boolean(opts.skipExisting),
+      benchmark: Boolean(opts.benchmark),
     };
   }
 
-  await main(options, { chalk, ora });
+  if (options.benchmark) {
+    await runBenchmark(options);
+  } else {
+    await main(options, { chalk, ora });
+  }
 }
 
 bootstrap().catch((err) => {
