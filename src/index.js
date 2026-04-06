@@ -2,6 +2,7 @@ const { program, Option } = require('commander');
 const os = require('os');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const cliProgress = require('cli-progress');
 const { version } = require('../package.json');
 const {
@@ -17,6 +18,9 @@ const numCPUs = os.cpus().length;
 
 /** Ký hiệu output (demo / báo cáo) */
 const ICON = { ok: '✓', fail: '✕', bolt: '⚡', warn: '⚠', dot: '·', info: 'ℹ' };
+const ERROR_LOG_PATH = path.join(__dirname, '..', 'error.log');
+let activePool = null;
+let handlingFatalError = false;
 
 function parsePositiveInt(value, label) {
   const n = parseInt(value, 10);
@@ -535,6 +539,7 @@ async function main(options, ui) {
     maxRetries: 2,
     logger: () => {},
   });
+  activePool = pool;
 
   const onShutdown = async (reason) => {
     try {
@@ -605,6 +610,7 @@ async function main(options, ui) {
     process.removeListener('SIGTERM', handleSigTerm);
     bar.stop();
     await pool.closeAll();
+    if (activePool === pool) activePool = null;
   }
 
   const endTime = Date.now();
@@ -867,7 +873,55 @@ async function bootstrap() {
   }
 }
 
+async function closeActivePoolSafely() {
+  if (!activePool) return;
+  try {
+    await activePool.closeAll();
+  } catch {
+    // ignore shutdown errors
+  } finally {
+    activePool = null;
+  }
+}
+
+function appendSevereErrorLog(source, err) {
+  const msg = err instanceof Error ? `${err.stack || err.message}` : String(err);
+  const line = `[${new Date().toISOString()}] ${source}\n${msg}\n\n`;
+  try {
+    fsSync.appendFileSync(ERROR_LOG_PATH, line, 'utf8');
+  } catch {
+    // ignore file system write errors during fatal handling
+  }
+}
+
+function installGlobalErrorHandlers() {
+  process.on('unhandledRejection', async (reason) => {
+    if (handlingFatalError) return;
+    handlingFatalError = true;
+    appendSevereErrorLog('unhandledRejection', reason);
+    console.error(
+      `${ICON.fail} Đã xảy ra lỗi hệ thống không mong muốn. Chi tiết đã được ghi vào error.log.`
+    );
+    await closeActivePoolSafely();
+    process.exit(1);
+  });
+
+  process.on('uncaughtException', async (err) => {
+    if (handlingFatalError) return;
+    handlingFatalError = true;
+    appendSevereErrorLog('uncaughtException', err);
+    console.error(
+      `${ICON.fail} Đã xảy ra lỗi nghiêm trọng. Hệ thống sẽ dừng an toàn và ghi log vào error.log.`
+    );
+    await closeActivePoolSafely();
+    process.exit(1);
+  });
+}
+
+installGlobalErrorHandlers();
 bootstrap().catch((err) => {
-  console.error(err);
+  appendSevereErrorLog('bootstrap', err);
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`${ICON.fail} Không thể khởi động ứng dụng: ${msg}`);
   process.exit(1);
 });
