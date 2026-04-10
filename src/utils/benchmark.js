@@ -3,8 +3,8 @@ const path = require('path');
 const { pipeline } = require('stream/promises');
 const sharp = require('sharp');
 const { performance } = require('perf_hooks');
-const { WorkerPool } = require('../workerPool');
-const { getAllImages } = require('./fsUtils');
+const { WorkerPool } = require('../workers/pool');
+const { getAllImages } = require('./fs');
 
 /**
  * GIẢI THÍCH VỀ PERFORMANCE TRONG NODE.JS:
