@@ -2,6 +2,7 @@ const { program, Option } = require('commander');
 const os = require('os');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const cliProgress = require('cli-progress');
 const { version } = require('../package.json');
 const {
@@ -17,6 +18,9 @@ const numCPUs = os.cpus().length;
 
 /** Ký hiệu output (demo / báo cáo) */
 const ICON = { ok: '✓', fail: '✕', bolt: '⚡', warn: '⚠', dot: '·', info: 'ℹ' };
+const ERROR_LOG_PATH = path.join(__dirname, '..', 'error.log');
+let activePool = null;
+let handlingFatalError = false;
 
 function parsePositiveInt(value, label) {
   const n = parseInt(value, 10);
@@ -47,6 +51,10 @@ function parseSizes(value) {
 
   const sizes = parts.map((item) => parsePositiveInt(item, 'sizes'));
   return [...new Set(sizes)];
+}
+
+function parseTimeoutSeconds(value) {
+  return parsePositiveInt(value, 'timeout');
 }
 
 function formatBytes(num) {
@@ -426,6 +434,7 @@ async function main(options, ui) {
   const chalk = ui.chalk;
   const ora = ui.ora;
   const workers = Math.max(1, options.workers ?? Math.max(1, numCPUs - 1));
+  const timeoutSeconds = Math.max(1, options.timeout ?? 60);
   const overwrite = options.overwrite === true;
   const withStats = Boolean(options.withStats);
 
@@ -526,8 +535,11 @@ async function main(options, ui) {
 
   const pool = new WorkerPool({
     workers,
+    taskTimeoutMs: timeoutSeconds * 1000,
+    maxRetries: 2,
     logger: () => {},
   });
+  activePool = pool;
 
   const onShutdown = async (reason) => {
     try {
@@ -598,6 +610,7 @@ async function main(options, ui) {
     process.removeListener('SIGTERM', handleSigTerm);
     bar.stop();
     await pool.closeAll();
+    if (activePool === pool) activePool = null;
   }
 
   const endTime = Date.now();
@@ -605,7 +618,7 @@ async function main(options, ui) {
 
   console.log(
     chalk.green.bold(
-      `\n✓ Hoàn tất: ${tasks.length} task trong ${totalMs} ms · workers=${workers}`
+      `\n✓ Hoàn tất: ${tasks.length} task trong ${totalMs} ms · workers=${workers} · timeout=${timeoutSeconds}s`
     )
   );
   if (skipped.length > 0) {
@@ -777,6 +790,12 @@ program
     'số worker xử lý song song (mặc định: số lõi CPU - 1)',
     (value) => parsePositiveInt(value, 'workers')
   )
+  .option(
+    '--timeout <seconds>',
+    'timeout cho mỗi task worker (giây, mặc định: 60)',
+    (value) => parseTimeoutSeconds(value),
+    60
+  )
   .option('--dry-run', 'chỉ liệt kê task sẽ xử lý, không resize thật', false)
   .option('--overwrite', 'ghi đè nếu file đích đã tồn tại', false)
   .option('--skip-existing', 'bỏ qua nếu file đích đã tồn tại (mặc định)', true)
@@ -838,6 +857,7 @@ async function bootstrap() {
       quality: opts.quality,
       format: opts.format,
       workers: opts.workers ?? Math.max(1, numCPUs - 1),
+      timeout: opts.timeout,
       dryRun: Boolean(opts.dryRun),
       overwrite: Boolean(opts.overwrite),
       skipExisting: Boolean(opts.skipExisting),
@@ -853,7 +873,55 @@ async function bootstrap() {
   }
 }
 
+async function closeActivePoolSafely() {
+  if (!activePool) return;
+  try {
+    await activePool.closeAll();
+  } catch {
+    // ignore shutdown errors
+  } finally {
+    activePool = null;
+  }
+}
+
+function appendSevereErrorLog(source, err) {
+  const msg = err instanceof Error ? `${err.stack || err.message}` : String(err);
+  const line = `[${new Date().toISOString()}] ${source}\n${msg}\n\n`;
+  try {
+    fsSync.appendFileSync(ERROR_LOG_PATH, line, 'utf8');
+  } catch {
+    // ignore file system write errors during fatal handling
+  }
+}
+
+function installGlobalErrorHandlers() {
+  process.on('unhandledRejection', async (reason) => {
+    if (handlingFatalError) return;
+    handlingFatalError = true;
+    appendSevereErrorLog('unhandledRejection', reason);
+    console.error(
+      `${ICON.fail} Đã xảy ra lỗi hệ thống không mong muốn. Chi tiết đã được ghi vào error.log.`
+    );
+    await closeActivePoolSafely();
+    process.exit(1);
+  });
+
+  process.on('uncaughtException', async (err) => {
+    if (handlingFatalError) return;
+    handlingFatalError = true;
+    appendSevereErrorLog('uncaughtException', err);
+    console.error(
+      `${ICON.fail} Đã xảy ra lỗi nghiêm trọng. Hệ thống sẽ dừng an toàn và ghi log vào error.log.`
+    );
+    await closeActivePoolSafely();
+    process.exit(1);
+  });
+}
+
+installGlobalErrorHandlers();
 bootstrap().catch((err) => {
-  console.error(err);
+  appendSevereErrorLog('bootstrap', err);
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`${ICON.fail} Không thể khởi động ứng dụng: ${msg}`);
   process.exit(1);
 });
