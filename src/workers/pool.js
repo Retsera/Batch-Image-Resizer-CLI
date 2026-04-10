@@ -250,4 +250,3 @@ class WorkerPool {
 }
 
 module.exports = { WorkerPool };
-
